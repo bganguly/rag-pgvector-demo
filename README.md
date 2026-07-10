@@ -73,9 +73,25 @@ Prerequisites checked at startup:
 
 ## Deploy
 
-Cloud deployment not yet configured. Local is the canonical run target.
-`deploy.sh` will provision managed PostgreSQL (with pgvector extension), Redis, and container hosting
-when added — same single-entry-point pattern as the GCP and AWS dashboard repos.
+```bash
+./scripts/deploy.sh
+```
+
+Provisions on GCP (no local Docker required — images built via Cloud Build):
+
+- **Artifact Registry** — Docker image repo
+- **Cloud SQL PG16** — managed postgres with pgvector extension enabled on first boot
+- **Cloud Run** — backend (FastAPI) and frontend (Next.js), each as independent services
+- **Secret Manager** — stores DB password and API keys; injected at runtime
+
+Prerequisites: `gcloud` CLI authenticated (`gcloud auth login`) and a project set
+(`gcloud config set project <id>`). API keys are read from your local `.env` and pushed
+to Secret Manager on first deploy.
+
+```bash
+./scripts/infra-down.sh          # stop local Docker
+./scripts/infra-down.sh --cloud  # delete Cloud Run services + Cloud SQL instance
+```
 
 ---
 
