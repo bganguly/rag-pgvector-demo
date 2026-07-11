@@ -2,7 +2,7 @@
 # deploy.sh — build and deploy rag-pgvector-demo to GCP Cloud Run
 # Provisions: Artifact Registry, Cloud SQL PG16 (+pgvector), Cloud Run (backend + frontend)
 # No local Docker required — images built via Cloud Build.
-# Usage: ./scripts/deploy.sh [local [--seed]]
+# Usage: ./scripts/deploy.sh
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -15,7 +15,14 @@ DB_USER="postgres"
 DB_SECRET="rag-db-password"
 AR_REPO="rag-demo"
 SA_NAME="rag-runner"
-TARGET="${1:-cloud}"
+
+printf '\n  [1] Local  — uvicorn + npm dev, no Docker (Postgres+Redis via URLs in .env)\n'
+printf '  [2] Cloud  — build via Cloud Build, deploy to Cloud Run + Cloud SQL\n\n'
+read -rp 'Choose [1]: ' _MODE
+case "${_MODE:-1}" in
+  2) TARGET="cloud" ;;
+  *) TARGET="local" ;;
+esac
 
 # ── local mode (no Docker) ────────────────────────────────────────────────────
 # Postgres + Redis run remotely (deployed Cloud SQL / Redis) or locally via brew.
@@ -49,7 +56,8 @@ if [[ "$TARGET" == "local" ]]; then
   BACKEND_PID=$!
   echo "Backend  → http://localhost:8001/docs"
 
-  if [[ "${2:-}" == "--seed" ]]; then
+  read -rp 'Seed Wikipedia articles into the local DB? [y/N]: ' _SEED
+  if [[ "${_SEED:-n}" =~ ^[Yy] ]]; then
     sleep 3
     echo "Seeding Wikipedia articles..."
     python3 "$ROOT/scripts/seed.py"
