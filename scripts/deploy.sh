@@ -102,7 +102,8 @@ if ! gcloud sql instances describe "$DB_INSTANCE" --project="$GCP_PROJECT" &>/de
 
   gcloud sql instances create "$DB_INSTANCE" \
     --database-version=POSTGRES_16 \
-    --tier=db-f1-micro \
+    --edition=ENTERPRISE \
+    --tier=db-custom-1-3840 \
     --region="$GCP_REGION" \
     --project="$GCP_PROJECT" \
     --no-backup
@@ -167,9 +168,12 @@ gcloud run deploy "$BACKEND_SVC" \
   --service-account="$SA_EMAIL" \
   --add-cloudsql-instances="$CLOUD_SQL_CONN" \
   --set-env-vars="DATABASE_URL=${DATABASE_URL},PGVECTOR_CONNECTION=${PGVECTOR_CONN},OPENAI_API_KEY=${OPENAI_KEY},ANTHROPIC_API_KEY=${ANTHROPIC_KEY},NVIDIA_API_KEY=${NVIDIA_KEY}" \
-  --allow-unauthenticated \
-  --min-instances=1 \
+  --no-allow-unauthenticated \
+  --min-instances=0 \
   --quiet
+gcloud run services add-iam-policy-binding "$BACKEND_SVC" \
+  --region="$GCP_REGION" --project="$GCP_PROJECT" \
+  --member="user:${ACTIVE_ACCOUNT}" --role="roles/run.invoker" --quiet
 
 BACKEND_URL=$(gcloud run services describe "$BACKEND_SVC" \
   --region="$GCP_REGION" --project="$GCP_PROJECT" \
@@ -184,9 +188,12 @@ gcloud run deploy "$FRONTEND_SVC" \
   --project="$GCP_PROJECT" \
   --service-account="$SA_EMAIL" \
   --set-env-vars="BACKEND_URL=${BACKEND_URL},OPENAI_API_KEY=${OPENAI_KEY},ANTHROPIC_API_KEY=${ANTHROPIC_KEY},NVIDIA_API_KEY=${NVIDIA_KEY}" \
-  --allow-unauthenticated \
-  --min-instances=1 \
+  --no-allow-unauthenticated \
+  --min-instances=0 \
   --quiet
+gcloud run services add-iam-policy-binding "$FRONTEND_SVC" \
+  --region="$GCP_REGION" --project="$GCP_PROJECT" \
+  --member="user:${ACTIVE_ACCOUNT}" --role="roles/run.invoker" --quiet
 
 FRONTEND_URL=$(gcloud run services describe "$FRONTEND_SVC" \
   --region="$GCP_REGION" --project="$GCP_PROJECT" \
