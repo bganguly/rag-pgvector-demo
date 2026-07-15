@@ -37,24 +37,27 @@ export default function ChatPanel({ provider, ingested }: { provider: Provider; 
 
     const exchangeIdx = messages.filter((m) => m.role === "user").length;
 
-    try {
-      const res = await fetch("/api/retrieve", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: q, k: 5 }),
-      });
-      if (res.ok) {
-        const { chunks } = await res.json();
-        setCtxByExchange((prev) => {
-          const next = [...prev];
-          next[exchangeIdx] = chunks ?? [];
-          return next;
-        });
-      }
-    } catch { /* silent — chat still works */ }
-
+    // Show message and start streaming immediately — don't block on retrieve
     setInput("");
-    await append({ role: "user", content: q });
+    append({ role: "user", content: q });
+
+    // Fetch context in background just to populate the "Retrieved N chunks" UI
+    fetch("/api/retrieve", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query: q, k: 5 }),
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.chunks?.length) {
+          setCtxByExchange((prev) => {
+            const next = [...prev];
+            next[exchangeIdx] = data.chunks;
+            return next;
+          });
+        }
+      })
+      .catch(() => null);
   }
 
   async function onSubmit(e: React.FormEvent) {

@@ -35,6 +35,7 @@ export async function POST(req: Request) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ query, k: 5 }),
+      signal: AbortSignal.timeout(8000),
     });
     if (retrieveRes.ok) {
       const data = await retrieveRes.json();
