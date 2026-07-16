@@ -1,3 +1,5 @@
+import asyncio
+
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -29,6 +31,6 @@ async def ingest(
 
     docs = [Document(page_content=c, metadata={"source": source}) for c in chunks]
     vs = get_vector_store()
-    await vs.aadd_documents(docs)
+    await asyncio.to_thread(vs.add_documents, docs)
 
     return {"source": source, "chunks": len(chunks)}

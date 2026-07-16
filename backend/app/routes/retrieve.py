@@ -1,3 +1,5 @@
+import asyncio
+
 from pydantic import BaseModel
 
 from fastapi import APIRouter
@@ -21,7 +23,7 @@ class Chunk(BaseModel):
 @router.post("/retrieve")
 async def retrieve(req: RetrieveRequest) -> dict:
     vs = get_vector_store()
-    results = await vs.asimilarity_search_with_relevance_scores(req.query, k=req.k)
+    results = await asyncio.to_thread(vs.similarity_search_with_relevance_scores, req.query, k=req.k)
     return {
         "query": req.query,
         "chunks": [
