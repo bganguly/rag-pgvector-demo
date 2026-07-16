@@ -217,7 +217,7 @@ export default function SeedPanel({ onReady }: { onReady?: () => void }) {
                 <span style={{ opacity: 0.6, fontSize: "0.65rem" }}>✓</span>
               )}
               {s.status === "fetching" && (
-                <span style={{ opacity: 0.7, fontSize: "0.65rem" }}>Downloading…</span>
+                <span style={{ opacity: 0.7, fontSize: "0.65rem" }}>Fetching…</span>
               )}
               {s.status === "ingesting" && (
                 <span style={{ opacity: 0.85, fontSize: "0.65rem" }}>
