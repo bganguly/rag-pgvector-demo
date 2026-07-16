@@ -100,22 +100,22 @@ sequenceDiagram
 </thead>
 <tbody>
 <tr>
-  <td><code>RecursiveCharacterTextSplitter</code></td>
+  <td><code>Recursive<wbr>Character<wbr>Text<wbr>Splitter</code></td>
   <td>Manual regex split + overlap bookkeeping</td>
   <td>Overlap prevents semantic units being cut at chunk boundaries — retrieval precision drops without it</td>
 </tr>
 <tr>
-  <td><code>OpenAIEmbeddings</code></td>
-  <td>Raw <code>openai.embeddings.create()</code> + batching</td>
+  <td><code>OpenAI<wbr>Embeddings</code></td>
+  <td>Raw <code>openai.<wbr>embeddings.<wbr>create()</code> + batching</td>
   <td>Guarantees same model ID at ingest and query time — a mismatch silently breaks cosine scores</td>
 </tr>
 <tr>
-  <td><code>PGVector.aadd_documents()</code></td>
+  <td><code>PGVector.<wbr>aadd_<wbr>documents()</code></td>
   <td><code>CREATE TABLE</code>, <code>CREATE INDEX</code>, parameterised <code>INSERT</code> per chunk</td>
   <td>Schema + IVFFlat index provisioned automatically on startup; no migrations to write</td>
 </tr>
 <tr>
-  <td><code>PGVector.similarity_search_with_relevance_scores()</code></td>
+  <td><code>PGVector.<wbr>similarity_<wbr>search_<wbr>with_<wbr>relevance_<wbr>scores()</code></td>
   <td>Embed query → <code>SELECT … ORDER BY embedding &lt;=&gt; $1 LIMIT k</code></td>
   <td>One call returns typed <code>(Document, float)</code> tuples that map directly to the API response</td>
 </tr>
