@@ -11,7 +11,11 @@ _vector_store: PGVector | None = None
 async def get_pool() -> asyncpg.Pool:
     global _pool
     if _pool is None:
-        _pool = await asyncpg.create_pool(settings.database_url)
+        _pool = await asyncpg.create_pool(
+            settings.database_url,
+            min_size=0,
+            max_inactive_connection_lifetime=30,
+        )
     return _pool
 
 

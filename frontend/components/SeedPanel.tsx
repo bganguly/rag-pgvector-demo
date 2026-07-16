@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const TOPICS = [
   { id: "fed",      label: "Federal Reserve",          slug: "Federal_Reserve" },
@@ -13,28 +13,62 @@ const TOPICS = [
   { id: "treasury", label: "US Treasury Securities",   slug: "United_States_Treasury_security" },
 ];
 
+type Mode   = "small" | "large";
 type Status = "idle" | "fetching" | "ingesting" | "done" | "error";
-type TState = { status: Status; chunks?: number };
+type TState = {
+  status: Status;
+  chunks?:     number;
+  estChunks?:  number;
+  startedAt?:  number;
+};
 
-const STATUS_ICON: Record<Status, string> = { idle: "", fetching: "↓", ingesting: "⊙", done: "✓", error: "✗" };
-const STATUS_LABEL: Partial<Record<Status, string>> = { fetching: "Fetching…", ingesting: "Embedding…" };
-const STATUS_COLOR: Record<Status, string> = {
-  idle: "var(--text-2)",
-  fetching: "var(--accent)",
+const STATUS_ICON: Record<Status, string>            = { idle: "", fetching: "↓", ingesting: "⊙", done: "✓", error: "✗" };
+const STATUS_LABEL: Partial<Record<Status, string>>  = { fetching: "Fetching…", ingesting: "Embedding…" };
+const STATUS_COLOR: Record<Status, string>           = {
+  idle:      "var(--text-2)",
+  fetching:  "var(--accent)",
   ingesting: "var(--accent)",
-  done: "#22c55e",
-  error: "#ef4444",
+  done:      "#22c55e",
+  error:     "#ef4444",
 };
 
 function blank(): Record<string, TState> {
   return Object.fromEntries(TOPICS.map((t) => [t.id, { status: "idle" as Status }]));
 }
 
+function estimateChunks(textLen: number): number {
+  if (textLen <= 800) return 1;
+  return Math.ceil((textLen - 800) / 650) + 1;
+}
+
+async function fetchWikiText(slug: string, mode: Mode): Promise<string> {
+  if (mode === "small") {
+    const r = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${slug}`);
+    const d = await r.json();
+    return d.extract ?? "";
+  }
+  const r = await fetch(
+    `https://en.wikipedia.org/w/api.php?action=query&titles=${slug}&prop=extracts&explaintext=true&format=json&origin=*`
+  );
+  const d    = await r.json();
+  const pages = d?.query?.pages ?? {};
+  const page  = Object.values(pages)[0] as Record<string, unknown>;
+  return (page?.extract as string) ?? "";
+}
+
 export default function SeedPanel({ onReady }: { onReady?: () => void }) {
+  const [mode, setMode]       = useState<Mode>("small");
   const [selected, setSelected] = useState<Set<string>>(new Set(TOPICS.map((t) => t.id)));
-  const [states, setStates]     = useState<Record<string, TState>>(blank);
-  const [running, setRunning]   = useState(false);
-  const [total, setTotal]       = useState(0);
+  const [states, setStates]   = useState<Record<string, TState>>(blank);
+  const [running, setRunning] = useState(false);
+  const [total, setTotal]     = useState(0);
+  const [tick, setTick]       = useState(0);
+
+  useEffect(() => {
+    if (!running) return;
+    const id = setInterval(() => setTick((n) => n + 1), 1000);
+    return () => clearInterval(id);
+  }, [running]);
 
   const set = (id: string, u: Partial<TState>) =>
     setStates((p) => ({ ...p, [id]: { ...p[id], ...u } }));
@@ -67,17 +101,16 @@ export default function SeedPanel({ onReady }: { onReady?: () => void }) {
 
     for (let i = 0; i < batch.length; i++) {
       const t = batch[i];
-      if (i > 0) await new Promise((r) => setTimeout(r, 1400));
+      if (i > 0) await new Promise((r) => setTimeout(r, 800));
 
       set(t.id, { status: "fetching" });
       try {
-        const wiki = await fetch(
-          `https://en.wikipedia.org/api/rest_v1/page/summary/${t.slug}`
-        ).then((r) => r.json());
-        const text: string = wiki.extract ?? "";
+        const text = await fetchWikiText(t.slug, mode);
         if (!text) throw new Error("empty");
 
-        set(t.id, { status: "ingesting" });
+        const estChunks = estimateChunks(text.length);
+        set(t.id, { status: "ingesting", estChunks, startedAt: Date.now() });
+
         const fd = new FormData();
         fd.append("text", text);
         fd.append("source", `wikipedia/${t.slug}`);
@@ -98,11 +131,10 @@ export default function SeedPanel({ onReady }: { onReady?: () => void }) {
     onReady?.();
   }
 
+  function toLoad() { return TOPICS.filter((t) => selected.has(t.id)); }
   const doneCount     = toLoad().filter((t) => states[t.id].status === "done").length;
   const allDone       = toLoad().length > 0 && doneCount === toLoad().length;
   const selectedCount = selected.size;
-
-  function toLoad() { return TOPICS.filter((t) => selected.has(t.id)); }
 
   return (
     <div className="flex flex-col gap-3 p-5">
@@ -117,23 +149,47 @@ export default function SeedPanel({ onReady }: { onReady?: () => void }) {
         </div>
         {!running && (
           <div className="flex gap-2 mt-0.5">
-            <button onClick={selectAll} className="text-[10px] underline" style={{ color: "var(--text-2)" }}>
-              All
-            </button>
-            <button onClick={clearAll} className="text-[10px] underline" style={{ color: "var(--text-2)" }}>
-              None
-            </button>
+            <button onClick={selectAll} className="text-[10px] underline" style={{ color: "var(--text-2)" }}>All</button>
+            <button onClick={clearAll}  className="text-[10px] underline" style={{ color: "var(--text-2)" }}>None</button>
           </div>
         )}
       </div>
 
+      <div className="flex gap-1 p-0.5 rounded" style={{ background: "var(--surface-2)", width: "fit-content" }}>
+        {(["small", "large"] as Mode[]).map((m) => (
+          <button
+            key={m}
+            disabled={running}
+            onClick={() => setMode(m)}
+            className="px-2.5 py-1 rounded text-[11px] font-medium transition-all"
+            style={{
+              background: mode === m ? "var(--accent)" : "transparent",
+              color:      mode === m ? "#fff" : "var(--text-2)",
+              cursor:     running ? "default" : "pointer",
+            }}
+          >
+            {m === "small" ? "Summary" : "Full Article"}
+          </button>
+        ))}
+      </div>
+      {mode === "large" && (
+        <p className="text-[10px]" style={{ color: "var(--text-2)" }}>
+          Full Wikipedia article · ~50–150 chunks/topic · ~$0.01 OpenAI embedding cost total
+        </p>
+      )}
+
       <div className="flex flex-wrap gap-1.5">
         {TOPICS.map((t) => {
-          const s          = states[t.id];
-          const isSel      = selected.has(t.id);
-          const isActive   = s.status === "fetching" || s.status === "ingesting";
-          const isDone     = s.status === "done";
-          const isError    = s.status === "error";
+          const s        = states[t.id];
+          const isSel    = selected.has(t.id);
+          const isActive = s.status === "fetching" || s.status === "ingesting";
+          const isDone   = s.status === "done";
+          const isError  = s.status === "error";
+
+          const elapsed = s.status === "ingesting" && s.startedAt
+            ? Math.floor((Date.now() - s.startedAt) / 1000)
+            : 0;
+          void tick;
 
           const bg     = isDone  ? "rgba(34,197,94,0.12)"
                        : isError ? "rgba(239,68,68,0.10)"
@@ -159,7 +215,7 @@ export default function SeedPanel({ onReady }: { onReady?: () => void }) {
                 border: `1px solid ${border}`,
                 color,
                 opacity: running && !isSel ? 0.35 : 1,
-                cursor: running ? "default" : "pointer",
+                cursor:  running ? "default" : "pointer",
               }}
             >
               {(isActive || isDone || isError) && (
@@ -174,13 +230,24 @@ export default function SeedPanel({ onReady }: { onReady?: () => void }) {
               {isDone && s.chunks != null && (
                 <span style={{ opacity: 0.6, fontSize: "0.65rem" }}>{s.chunks}c</span>
               )}
-              {isActive && (
-                <span style={{ opacity: 0.7, fontSize: "0.65rem" }}>{STATUS_LABEL[s.status]}</span>
+              {s.status === "fetching" && (
+                <span style={{ opacity: 0.7, fontSize: "0.65rem" }}>{STATUS_LABEL.fetching}</span>
+              )}
+              {s.status === "ingesting" && (
+                <span style={{ opacity: 0.7, fontSize: "0.65rem" }}>
+                  ~{s.estChunks}c · {elapsed}s
+                </span>
               )}
             </button>
           );
         })}
       </div>
+
+      {running && (
+        <div className="text-xs text-center" style={{ color: "var(--text-2)" }}>
+          {doneCount} / {toLoad().length} topics · {total} chunks indexed
+        </div>
+      )}
 
       {allDone ? (
         <>
@@ -191,7 +258,7 @@ export default function SeedPanel({ onReady }: { onReady?: () => void }) {
             ✓ {total} chunks indexed and ready
           </div>
           <div className="flex gap-3 justify-center">
-            <button onClick={() => load(true)} className="text-xs underline" style={{ color: "#ef4444" }}>
+            <button onClick={() => load(true)}  className="text-xs underline" style={{ color: "#ef4444" }}>
               Clear &amp; Re-index
             </button>
             <button onClick={() => load(false)} className="text-xs underline" style={{ color: "var(--text-2)" }}>
@@ -206,8 +273,8 @@ export default function SeedPanel({ onReady }: { onReady?: () => void }) {
           className="rounded py-2 text-sm font-medium transition-opacity"
           style={{
             background: "var(--accent)",
-            color: "#fff",
-            opacity: running || selectedCount === 0 ? 0.5 : 1,
+            color:      "#fff",
+            opacity:    running || selectedCount === 0 ? 0.5 : 1,
           }}
         >
           {running
