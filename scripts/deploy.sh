@@ -556,9 +556,9 @@ FE_EXTRA_ENV=$(python3 -c "import json; print(json.dumps([e for e in [
 FE_TASK_ARN=$(_register_task_def "${TF_VAR_name_prefix}-frontend" "${FE_ECR_URI}:${TAG}" "3010" "$FE_EXTRA_ENV")
 
 aws ecs update-service --cluster "$CLUSTER_NAME" --service "$BE_SVC" \
-  --task-definition "$BE_TASK_ARN" --force-new-deployment --no-cli-pager >/dev/null
+  --task-definition "$BE_TASK_ARN" --desired-count 1 --force-new-deployment --no-cli-pager >/dev/null
 aws ecs update-service --cluster "$CLUSTER_NAME" --service "$FE_SVC" \
-  --task-definition "$FE_TASK_ARN" --force-new-deployment --no-cli-pager >/dev/null
+  --task-definition "$FE_TASK_ARN" --desired-count 1 --force-new-deployment --no-cli-pager >/dev/null
 
 printf '\n  Waiting for services to stabilize (this takes 2-4 min)...\n'
 _ecs_wait_stable() {
