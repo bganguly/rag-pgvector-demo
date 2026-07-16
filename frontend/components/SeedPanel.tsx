@@ -22,9 +22,8 @@ type TState = {
   errorMsg?:   string;
 };
 
-const STATUS_ICON: Record<Status, string>            = { idle: "", fetching: "↓", ingesting: "⊙", done: "✓", error: "✗" };
-const STATUS_LABEL: Partial<Record<Status, string>>  = { fetching: "Fetching…", ingesting: "Embedding…" };
-const STATUS_COLOR: Record<Status, string>           = {
+const STATUS_ICON: Record<Status, string> = { idle: "", fetching: "↓", ingesting: "", done: "✓", error: "✗" };
+const STATUS_COLOR: Record<Status, string> = {
   idle:      "var(--text-2)",
   fetching:  "var(--accent)",
   ingesting: "var(--accent)",
@@ -34,6 +33,19 @@ const STATUS_COLOR: Record<Status, string>           = {
 
 function blank(): Record<string, TState> {
   return Object.fromEntries(TOPICS.map((t) => [t.id, { status: "idle" as Status }]));
+}
+
+const SPINNER = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+
+const INGEST_STEPS: { after: number; label: string }[] = [
+  { after: 0,  label: "Received" },
+  { after: 2,  label: "Chunking" },
+  { after: 5,  label: "Encoding" },
+  { after: 15, label: "Storing" },
+];
+
+function ingestStepLabel(elapsed: number): string {
+  return [...INGEST_STEPS].reverse().find((s) => elapsed >= s.after)?.label ?? "Received";
 }
 
 function estimateChunks(textLen: number): number {
@@ -161,7 +173,7 @@ export default function SeedPanel({ onReady }: { onReady?: () => void }) {
           const elapsed = s.status === "ingesting" && s.startedAt
             ? Math.floor((Date.now() - s.startedAt) / 1000)
             : 0;
-          void tick;
+          const spinnerChar = SPINNER[tick % SPINNER.length];
 
           const bg     = isDone  ? "rgba(34,197,94,0.12)"
                        : isError ? "rgba(239,68,68,0.10)"
@@ -190,24 +202,26 @@ export default function SeedPanel({ onReady }: { onReady?: () => void }) {
                 cursor:  running ? "default" : "pointer",
               }}
             >
-              {(isActive || isDone || isError) && (
-                <span
-                  className={isActive ? "animate-pulse font-mono" : "font-mono"}
-                  style={{ color: STATUS_COLOR[s.status] }}
-                >
+              {s.status === "ingesting" && (
+                <span className="font-mono" style={{ color: STATUS_COLOR.ingesting }}>
+                  {spinnerChar}
+                </span>
+              )}
+              {s.status !== "ingesting" && (isActive || isDone || isError) && (
+                <span className="font-mono" style={{ color: STATUS_COLOR[s.status] }}>
                   {STATUS_ICON[s.status]}
                 </span>
               )}
               {t.label}
-              {isDone && s.chunks != null && (
-                <span style={{ opacity: 0.6, fontSize: "0.65rem" }}>{s.chunks}c</span>
+              {isDone && (
+                <span style={{ opacity: 0.6, fontSize: "0.65rem" }}>✓</span>
               )}
               {s.status === "fetching" && (
-                <span style={{ opacity: 0.7, fontSize: "0.65rem" }}>{STATUS_LABEL.fetching}</span>
+                <span style={{ opacity: 0.7, fontSize: "0.65rem" }}>Downloading…</span>
               )}
               {s.status === "ingesting" && (
-                <span style={{ opacity: 0.7, fontSize: "0.65rem" }}>
-                  ~{s.estChunks}c · {elapsed}s
+                <span style={{ opacity: 0.85, fontSize: "0.65rem" }}>
+                  {ingestStepLabel(elapsed)}…
                 </span>
               )}
             </button>
