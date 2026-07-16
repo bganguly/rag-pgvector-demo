@@ -503,18 +503,24 @@ _prompt_key() {
 }
 
 printf '\n--- API keys ---\n'
-OPENAI_API_KEY=$(_prompt_key    "OPENAI_API_KEY"    "${OPENAI_API_KEY:-}"    required)
-ANTHROPIC_API_KEY=$(_prompt_key "ANTHROPIC_API_KEY" "${ANTHROPIC_API_KEY:-}" optional)
-NVIDIA_API_KEY=$(_prompt_key    "NVIDIA_API_KEY"    "${NVIDIA_API_KEY:-}"    optional)
+_OLD_OPENAI="${OPENAI_API_KEY:-}"
+_OLD_ANTHROPIC="${ANTHROPIC_API_KEY:-}"
+_OLD_NVIDIA="${NVIDIA_API_KEY:-}"
+OPENAI_API_KEY=$(_prompt_key    "OPENAI_API_KEY"    "$_OLD_OPENAI"    required)
+ANTHROPIC_API_KEY=$(_prompt_key "ANTHROPIC_API_KEY" "$_OLD_ANTHROPIC" optional)
+NVIDIA_API_KEY=$(_prompt_key    "NVIDIA_API_KEY"    "$_OLD_NVIDIA"    optional)
 
-for _pair in "openai-key:${OPENAI_API_KEY:-}" "anthropic-key:${ANTHROPIC_API_KEY:-}" "nvidia-key:${NVIDIA_API_KEY:-}"; do
-  _pname="/${TF_VAR_name_prefix}/${_pair%%:*}"
-  _pval="${_pair#*:}"
-  [[ -z "$_pval" ]] && continue
-  aws ssm put-parameter --name "$_pname" --value "$_pval" \
+_ssm_update() {
+  local _pname="$1" _new="$2" _old="$3"
+  [[ -z "$_new" ]] && return
+  [[ "$_new" == "$_old" ]] && return
+  aws ssm put-parameter --name "$_pname" --value "$_new" \
     --type SecureString --overwrite --no-cli-pager >/dev/null
   printf '  Updated SSM: %s\n' "$_pname"
-done
+}
+_ssm_update "/${TF_VAR_name_prefix}/openai-key"    "${OPENAI_API_KEY:-}"    "$_OLD_OPENAI"
+_ssm_update "/${TF_VAR_name_prefix}/anthropic-key" "${ANTHROPIC_API_KEY:-}" "$_OLD_ANTHROPIC"
+_ssm_update "/${TF_VAR_name_prefix}/nvidia-key"    "${NVIDIA_API_KEY:-}"    "$_OLD_NVIDIA"
 
 OPENAI_API_KEY=$(aws ssm get-parameter --name "/${TF_VAR_name_prefix}/openai-key" --with-decryption --query Parameter.Value --output text 2>/dev/null || echo "")
 ANTHROPIC_API_KEY=$(aws ssm get-parameter --name "/${TF_VAR_name_prefix}/anthropic-key" --with-decryption --query Parameter.Value --output text 2>/dev/null || echo "")
