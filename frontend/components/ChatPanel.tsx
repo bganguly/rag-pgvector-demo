@@ -19,7 +19,7 @@ const SUGGESTED = [
 ];
 
 export default function ChatPanel({ provider, ingested }: { provider: Provider; ingested: boolean }) {
-  const { messages, input, handleInputChange, isLoading, setMessages, setInput, append } =
+  const { messages, input, handleInputChange, isLoading, error, setMessages, setInput, append } =
     useChat({ api: "/api/chat", body: { provider } });
 
   const [ctxByExchange, setCtxByExchange] = useState<Chunk[][]>([]);
@@ -178,6 +178,19 @@ export default function ChatPanel({ provider, ingested }: { provider: Provider; 
               style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-2)" }}
             >
               <span className="animate-pulse">Generating…</span>
+            </div>
+          </div>
+        )}
+
+        {error && (
+          <div className="flex justify-start">
+            <div
+              className="rounded-lg px-4 py-2.5 text-sm max-w-[80%]"
+              style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.3)", color: "#ef4444" }}
+            >
+              {provider === "nim"
+                ? "NVIDIA NIM error — API key may be expired or quota exhausted. Generate a new key at build.nvidia.com."
+                : "An error occurred. Check your API key and try again."}
             </div>
           </div>
         )}
