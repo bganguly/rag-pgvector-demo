@@ -47,22 +47,22 @@ export async function POST(req: Request) {
     backendError = true;
   }
 
-  const context = backendError
-    ? "The knowledge base is currently unavailable. Answer from general knowledge and note that the knowledge base could not be reached."
-    : chunks.length > 0
-    ? chunks
-        .map((c, i) => `[${i + 1}] (source: ${c.source})\n${c.content}`)
-        .join("\n\n")
-    : "No relevant documents found in the knowledge base.";
+  const hasContext = !backendError && chunks.length > 0;
 
-  const result = streamText({
-    model: pickModel(provider),
-    system: `You are a helpful assistant. Answer using only the context below.
+  const system = hasContext
+    ? `You are a helpful assistant. Answer using only the context below.
 If the context doesn't contain the answer, say so.
 Cite source numbers like [1] when you use them.
 
 Context:
-${context}`,
+${chunks.map((c, i) => `[${i + 1}] (source: ${c.source})\n${c.content}`).join("\n\n")}`
+    : `You are a helpful assistant.
+Begin your response with exactly this line: "**Generic LLM response** (not from loaded context)"
+Then answer the question from your general knowledge.`;
+
+  const result = streamText({
+    model: pickModel(provider),
+    system,
     messages,
   });
 

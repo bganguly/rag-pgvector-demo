@@ -11,12 +11,14 @@ runtime — same interface, configurable `base_url`.
 
 ## Using the App
 
-1. **Select topics** — toggle the Wikipedia topic chips in the left panel.
-2. **Choose depth** — **Summary** (default, ~1–2 chunks/topic, instant) or **Full Article** (~50–150 chunks/topic, ~$0.01 total OpenAI embedding cost).
-3. **Click Load Selected** — fetches, chunks, embeds, and stores; per-topic progress shows estimated chunks and elapsed seconds.
-4. **Ask a question** — pick from the **Sample questions** strip above the input, or type your own and press **Ask**.
-5. **Switch provider** — use the Anthropic / OpenAI / NVIDIA NIM toggle in the header at any time.
-6. **Custom documents** *(optional)* — expand **Custom Documents** to paste text or upload a `.txt` / `.md` file.
+Load full Wikipedia articles by topic label, then ask questions against what you've loaded. Once one or more topics are loaded, run the prebaked sample queries or write your own. When there isn't enough context loaded — or none at all — the selected LLM will respond based on what it already knows, and will say so at the top of its reply.
+
+1. **Select topics** — toggle the topic chips in the left panel to choose which Wikipedia articles to load.
+2. **Click Load Selected** — fetches and indexes the selected articles; per-topic progress is shown as each one completes.
+3. **Ask a question** — pick from the **Sample questions** strip above the input, or type your own and press **Ask**.
+4. **Switch provider** — use the Anthropic / OpenAI / NVIDIA NIM toggle in the header at any time.
+5. **Clear & Re-index** — appears after a successful load; wipes all loaded content and re-fetches the selected topics fresh.
+6. **Custom documents** *(optional)* — paste text or upload a `.txt` / `.md` file to add your own content alongside the Wikipedia articles.
 
 ---
 
@@ -26,17 +28,6 @@ runtime — same interface, configurable `base_url`.
 ./scripts/deploy.sh      # local [1], AWS Lambda + Neon + Vercel [2], or GCP Cloud Run [3]
 ./scripts/infra-down.sh  # tear down local [1] or AWS [--aws] or GCP [--cloud]
 ```
-
-### Cost — serverless, scales to zero
-
-| Resource | Provider | Cost |
-|---|---|---|
-| **Backend** | AWS Lambda (container image, 1 GB) | ~$0 (free tier) |
-| **Database** | Neon serverless Postgres + pgvector | ~$0 (free tier, 512 MB) |
-| **Frontend** | Vercel | ~$0 (free tier) |
-| **Total** | | **~$0/mo** |
-
-Lambda and Neon both scale to zero between requests — no idle charges, no scheduled start/stop needed.
 
 ---
 

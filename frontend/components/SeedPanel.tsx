@@ -13,7 +13,6 @@ const TOPICS = [
   { id: "treasury", label: "US Treasury Securities",   slug: "United_States_Treasury_security" },
 ];
 
-type Mode   = "small" | "large";
 type Status = "idle" | "fetching" | "ingesting" | "done" | "error";
 type TState = {
   status: Status;
@@ -41,12 +40,7 @@ function estimateChunks(textLen: number): number {
   return Math.ceil((textLen - 800) / 650) + 1;
 }
 
-async function fetchWikiText(slug: string, mode: Mode): Promise<string> {
-  if (mode === "small") {
-    const r = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${slug}`);
-    const d = await r.json();
-    return d.extract ?? "";
-  }
+async function fetchWikiText(slug: string): Promise<string> {
   const r = await fetch(
     `https://en.wikipedia.org/w/api.php?action=query&titles=${slug}&prop=extracts&explaintext=true&format=json&origin=*`
   );
@@ -57,7 +51,6 @@ async function fetchWikiText(slug: string, mode: Mode): Promise<string> {
 }
 
 export default function SeedPanel({ onReady }: { onReady?: () => void }) {
-  const [mode, setMode]       = useState<Mode>("small");
   const [selected, setSelected] = useState<Set<string>>(new Set(TOPICS.map((t) => t.id)));
   const [states, setStates]   = useState<Record<string, TState>>(blank);
   const [running, setRunning] = useState(false);
@@ -105,7 +98,7 @@ export default function SeedPanel({ onReady }: { onReady?: () => void }) {
 
       set(t.id, { status: "fetching" });
       try {
-        const text = await fetchWikiText(t.slug, mode);
+        const text = await fetchWikiText(t.slug);
         if (!text) throw new Error("empty");
 
         const estChunks = estimateChunks(text.length);
@@ -155,28 +148,6 @@ export default function SeedPanel({ onReady }: { onReady?: () => void }) {
         )}
       </div>
 
-      <div className="flex gap-1 p-0.5 rounded" style={{ background: "var(--surface-2)", width: "fit-content" }}>
-        {(["small", "large"] as Mode[]).map((m) => (
-          <button
-            key={m}
-            disabled={running}
-            onClick={() => setMode(m)}
-            className="px-2.5 py-1 rounded text-[11px] font-medium transition-all"
-            style={{
-              background: mode === m ? "var(--accent)" : "transparent",
-              color:      mode === m ? "#fff" : "var(--text-2)",
-              cursor:     running ? "default" : "pointer",
-            }}
-          >
-            {m === "small" ? "Summary" : "Full Article"}
-          </button>
-        ))}
-      </div>
-      {mode === "large" && (
-        <p className="text-[10px]" style={{ color: "var(--text-2)" }}>
-          Full Wikipedia article · ~50–150 chunks/topic · ~$0.01 OpenAI embedding cost total
-        </p>
-      )}
 
       <div className="flex flex-wrap gap-1.5">
         {TOPICS.map((t) => {
