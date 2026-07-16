@@ -58,7 +58,7 @@ if [[ "$TARGET" == "local" ]]; then
   cp "$ROOT/.env" "$ROOT/backend/.env" 2>/dev/null || true
   uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload &
   BACKEND_PID=$!
-  echo "Backend  → http://localhost:8001/docs"
+  echo "Backend  → http://localhost:8001"
 
   read -rp 'Seed Wikipedia articles into the local DB? [y/N]: ' _SEED
   if [[ "${_SEED:-n}" =~ ^[Yy] ]]; then
@@ -267,7 +267,7 @@ ENVEOF
 
 printf '\n=== RAG + pgvector Demo deployed ===\n'
 printf '  App:  %s\n' "$FRONTEND_URL"
-printf '  API:  %s/docs\n' "$BACKEND_URL"
+printf '  API:  %s\n' "$BACKEND_URL"
 printf '\nTear down: ./scripts/infra-down.sh --cloud\n'
 exit 0
 fi
@@ -468,12 +468,12 @@ FRONTEND_URL=$(vercel --prod --yes 2>/dev/null | tail -1)
 
 printf '\n✓ RAG + pgvector Demo live (serverless)\n'
 printf '  App:      %s\n' "$FRONTEND_URL"
-printf '  API Docs: %sdocs\n' "$BACKEND_URL"
+printf '  API:      %s\n' "$BACKEND_URL"
 printf '  Cost:     ~$0/mo  (Lambda + Neon + Vercel free tiers)\n'
 printf '  Tear down: ./scripts/infra-down.sh --aws\n'
 
 PORTFOLIO_SET_LIVE="$(cd "$ROOT/../../portfolio/scripts" 2>/dev/null && pwd || true)/set-live-url.sh"
 if [[ -f "$PORTFOLIO_SET_LIVE" ]]; then
   printf '\n  Updating portfolio live-urls.js...\n'
-  bash "$PORTFOLIO_SET_LIVE" --tier "lite" rag "$FRONTEND_URL" "${BACKEND_URL}docs"
+  bash "$PORTFOLIO_SET_LIVE" --tier "lite" rag "$FRONTEND_URL" "${BACKEND_URL}"
 fi

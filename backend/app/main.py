@@ -15,7 +15,14 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="RAG API", version="1.0.0", lifespan=lifespan)
+app = FastAPI(
+    title="RAG API",
+    version="1.0.0",
+    lifespan=lifespan,
+    docs_url=None,
+    redoc_url=None,
+    openapi_url=None,
+)
 
 _raw_origins = os.getenv("CORS_ORIGINS", "*")
 _origins = [o.strip() for o in _raw_origins.split(",") if o.strip()]

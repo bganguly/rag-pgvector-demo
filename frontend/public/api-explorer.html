@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>API Explorer — RAG pgvector Demo</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%238b5cf6'/><text x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' fill='white' font-family='Inter,system-ui,sans-serif' font-size='11' font-weight='700'>RAG</text></svg>" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: { extend: { fontFamily: { sans: ['Inter','system-ui','sans-serif'], mono: ['JetBrains Mono','monospace'] } } }
+    };
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+    body { background: #0f0f13; }
+    .glass { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); }
+    .chip { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 9999px; font-size: 0.7rem; font-weight: 500; }
+    .method-get    { background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.3); color: #34d399; }
+    .method-post   { background: rgba(139,92,246,0.12); border: 1px solid rgba(139,92,246,0.3); color: #c4b5fd; }
+    .method-delete { background: rgba(239,68,68,0.12);  border: 1px solid rgba(239,68,68,0.3);  color: #f87171; }
+    input[type="text"], input[type="number"], textarea {
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+      color: #e4e4e7; border-radius: 8px; padding: 6px 12px; font-size: 0.8rem;
+      font-family: 'JetBrains Mono', monospace; outline: none; transition: border-color 0.15s;
+      width: 100%;
+    }
+    textarea { resize: vertical; min-height: 72px; }
+    input[type="text"]:focus, input[type="number"]:focus, textarea:focus { border-color: rgba(139,92,246,0.5); }
+    .run-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 16px; border-radius: 8px; font-size: 0.75rem; font-weight: 600;
+      background: rgba(139,92,246,0.15); border: 1px solid rgba(139,92,246,0.4);
+      color: #c4b5fd; cursor: pointer; transition: all 0.15s; white-space: nowrap;
+    }
+    .run-btn:hover { background: rgba(139,92,246,0.25); }
+    .run-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .run-btn.danger { background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.3); color: #f87171; }
+    .run-btn.danger:hover { background: rgba(239,68,68,0.2); }
+    .endpoint-path { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: #a1a1aa; }
+    .timing-fast { background: rgba(16,185,129,0.12); color: #34d399; border: 1px solid rgba(16,185,129,0.25); }
+    .timing-mid  { background: rgba(245,158,11,0.12); color: #fbbf24; border: 1px solid rgba(245,158,11,0.25); }
+    .timing-slow { background: rgba(239,68,68,0.12);  color: #f87171; border: 1px solid rgba(239,68,68,0.25); }
+    .result-table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
+    .result-table th { color: #71717a; font-weight: 500; text-align: left; padding: 6px 10px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .result-table td { color: #d4d4d8; padding: 6px 10px; border-bottom: 1px solid rgba(255,255,255,0.04); vertical-align: top; }
+    .result-table tr:last-child td { border-bottom: none; }
+    .score-bar-wrap { display: flex; align-items: center; gap: 8px; }
+    .score-bar { height: 4px; border-radius: 2px; background: rgba(139,92,246,0.6); min-width: 4px; }
+    .raw-json { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 12px; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: #71717a; max-height: 260px; overflow-y: auto; white-space: pre; }
+    .schema-block { background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 10px 14px; font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: #52525b; line-height: 1.8; }
+    .schema-block .k { color: #818cf8; }
+    .schema-block .v { color: #71717a; }
+    .schema-block .opt { color: #3f3f46; }
+    details summary { cursor: pointer; font-size: 0.7rem; color: #52525b; margin-top: 10px; user-select: none; list-style: none; display: flex; align-items: center; gap: 5px; }
+    details summary:hover { color: #a1a1aa; }
+    details summary::before { content: '▶'; font-size: 0.55rem; transition: transform 0.15s; }
+    details[open] summary::before { transform: rotate(90deg); }
+    details[open] summary { color: #a1a1aa; }
+    .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(139,92,246,0.3); border-top-color: #a78bfa; border-radius: 50%; animation: spin 0.6s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .error-msg { color: #f87171; font-size: 0.75rem; background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2); border-radius: 8px; padding: 10px 14px; }
+    .success-msg { color: #34d399; font-size: 0.75rem; background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.2); border-radius: 8px; padding: 10px 14px; }
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+    .flow-arrow { color: #3f3f46; margin: 0 6px; }
+    .flow-node { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 6px; font-size: 0.65rem; font-family: 'JetBrains Mono', monospace; }
+    .http-code-2 { color: #34d399; }
+    .http-code-4 { color: #f87171; }
+    .file-drop { border: 1px dashed rgba(139,92,246,0.3); border-radius: 8px; padding: 14px; text-align: center; cursor: pointer; transition: border-color 0.15s; }
+    .file-drop:hover, .file-drop.drag { border-color: rgba(139,92,246,0.6); background: rgba(139,92,246,0.04); }
+    .chunk-content { font-size: 0.72rem; color: #a1a1aa; line-height: 1.5; max-height: 80px; overflow: hidden; position: relative; }
+    .chunk-content::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 24px; background: linear-gradient(transparent, #0f0f13); }
+  </style>
+</head>
+<body class="text-zinc-100 font-sans antialiased min-h-screen">
+
+  <!-- Nav -->
+  <nav class="fixed top-0 inset-x-0 z-40 border-b" style="border-color:rgba(255,255,255,0.06);background:rgba(15,15,19,0.9);backdrop-filter:blur(16px)">
+    <div class="max-w-4xl mx-auto px-6 h-14 flex items-center justify-between">
+      <a href="/" class="flex items-center gap-2 text-sm text-zinc-400 hover:text-zinc-100 transition-colors">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M5 12l7-7M5 12l7 7"/></svg>
+        App
+      </a>
+      <div class="flex items-center gap-3">
+        <span class="text-xs text-zinc-600">RAG pgvector Demo</span>
+        <span class="chip" style="background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.25);color:#c4b5fd">FastAPI · pgvector · LangChain</span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="pt-28 pb-10 px-6 max-w-4xl mx-auto">
+    <p class="text-xs font-medium text-violet-400 tracking-widest uppercase mb-3">API Explorer</p>
+    <h1 class="text-2xl font-bold text-zinc-100 mb-2">Live API — RAG pgvector Demo</h1>
+    <p class="text-sm text-zinc-500 max-w-2xl mb-6">
+      Run real requests against the FastAPI backend. Ingest text into pgvector, retrieve semantically
+      similar chunks, and reset the knowledge base.
+    </p>
+
+    <!-- Architecture flow -->
+    <div class="flex flex-wrap items-center gap-1 mb-6 text-[11px]">
+      <span class="flow-node" style="background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.2);color:#c4b5fd">POST /api/ingest</span>
+      <span class="flow-arrow">→</span>
+      <span class="flow-node" style="background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);color:#a5b4fc">LangChain splitter</span>
+      <span class="flow-arrow">→</span>
+      <span class="flow-node" style="background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);color:#a5b4fc">OpenAI embeddings</span>
+      <span class="flow-arrow">→</span>
+      <span class="flow-node" style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.2);color:#34d399">pgvector</span>
+      <span class="flow-arrow">·</span>
+      <span class="flow-node" style="background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.2);color:#c4b5fd">POST /api/retrieve</span>
+      <span class="flow-arrow">→</span>
+      <span class="flow-node" style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.2);color:#34d399">cosine top-k</span>
+    </div>
+
+    <!-- Base URL input -->
+    <div class="glass rounded-xl px-4 py-3 flex flex-wrap items-center gap-3">
+      <div class="flex items-center gap-2 flex-shrink-0">
+        <span id="url-dot" class="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block"></span>
+        <span class="text-xs text-zinc-600">Backend base URL</span>
+      </div>
+      <input type="text" id="base-url-input"
+        placeholder="http://localhost:8001"
+        style="flex:1;min-width:260px;width:auto"
+        oninput="onBaseUrlChange()" />
+      <span class="text-xs text-zinc-600" id="url-hint">run <code class="text-zinc-500">./scripts/deploy.sh</code> then paste the backend URL</span>
+    </div>
+  </section>
+
+  <!-- Endpoint cards -->
+  <section class="px-6 pb-24 max-w-4xl mx-auto space-y-5">
+
+    <!-- GET /health -->
+    <div class="glass rounded-2xl overflow-hidden">
+      <button class="w-full flex items-center justify-between gap-4 px-6 py-4 text-left" onclick="toggleCard('health')">
+        <div class="flex items-center gap-3">
+          <span class="chip method-get text-[11px] px-2 py-0.5">GET</span>
+          <span class="endpoint-path">/health</span>
+          <span class="text-xs text-zinc-600 hidden sm:inline">Liveness check — confirms the Lambda/ECS container is up</span>
+        </div>
+        <svg id="chevron-health" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-zinc-600 flex-shrink-0 transition-transform duration-200"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <div id="body-health" class="hidden px-6 pb-6 border-t" style="border-color:rgba(255,255,255,0.06)">
+        <div class="pt-4 mb-4">
+          <div class="schema-block">
+            <span class="http-code-2">200</span> { <span class="k">"status"</span>: <span class="v">"ok"</span> }
+          </div>
+        </div>
+        <button class="run-btn" onclick="runHealth()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M5 3l14 9-14 9V3z"/></svg>
+          Ping
+        </button>
+        <div id="result-health" class="mt-4"></div>
+      </div>
+    </div>
+
+    <!-- POST /api/ingest -->
+    <div class="glass rounded-2xl overflow-hidden">
+      <button class="w-full flex items-center justify-between gap-4 px-6 py-4 text-left" onclick="toggleCard('ingest')">
+        <div class="flex items-center gap-3">
+          <span class="chip method-post text-[11px] px-2 py-0.5">POST</span>
+          <span class="endpoint-path">/api/ingest</span>
+          <span class="text-xs text-zinc-600 hidden sm:inline">Chunk, embed, and store text into pgvector</span>
+        </div>
+        <svg id="chevron-ingest" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-zinc-600 flex-shrink-0 transition-transform duration-200"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <div id="body-ingest" class="hidden px-6 pb-6 border-t" style="border-color:rgba(255,255,255,0.06)">
+        <div class="pt-4 mb-5 grid sm:grid-cols-2 gap-4">
+          <div>
+            <p class="text-[10px] text-zinc-600 uppercase tracking-wider mb-2">Request — multipart/form-data</p>
+            <div class="schema-block">
+              <span class="k">text</span>: <span class="v">&lt;string&gt;</span> <span class="opt">(or)</span><br>
+              <span class="k">file</span>: <span class="v">&lt;.txt / .md&gt;</span><br>
+              <span class="opt k">source</span><span class="opt">?: &lt;string&gt; = "manual"</span>
+            </div>
+          </div>
+          <div>
+            <p class="text-[10px] text-zinc-600 uppercase tracking-wider mb-2">Response</p>
+            <div class="schema-block">
+              <span class="http-code-2">200</span> {<br>
+              &nbsp;&nbsp;<span class="k">"source"</span>: <span class="v">&lt;string&gt;</span>,<br>
+              &nbsp;&nbsp;<span class="k">"chunks"</span>: <span class="v">&lt;number&gt;</span><br>
+              }<br>
+              <span class="http-code-4">400</span> { <span class="k">"detail"</span>: <span class="v">&lt;string&gt;</span> }
+            </div>
+          </div>
+        </div>
+        <div class="space-y-3 mb-4">
+          <div>
+            <label class="text-[10px] text-zinc-600 uppercase tracking-wider block mb-1.5">text</label>
+            <textarea id="ingest-text" placeholder="Paste any text to embed…"></textarea>
+          </div>
+          <div>
+            <label class="text-[10px] text-zinc-600 uppercase tracking-wider block mb-1.5">source label</label>
+            <input type="text" id="ingest-source" placeholder="manual" style="width:200px" />
+          </div>
+          <div>
+            <label class="text-[10px] text-zinc-600 uppercase tracking-wider block mb-1.5">or upload a file</label>
+            <div class="file-drop" id="file-drop-zone" onclick="document.getElementById('ingest-file').click()"
+                 ondragover="event.preventDefault();this.classList.add('drag')"
+                 ondragleave="this.classList.remove('drag')"
+                 ondrop="handleFileDrop(event)">
+              <input type="file" id="ingest-file" accept=".txt,.md" class="hidden" onchange="handleFileSelect(event)" />
+              <p class="text-xs text-zinc-600" id="file-label">Click or drag a .txt / .md file</p>
+            </div>
+          </div>
+          <button class="run-btn" onclick="runIngest()">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M5 3l14 9-14 9V3z"/></svg>
+            Ingest
+          </button>
+        </div>
+        <div id="result-ingest"></div>
+      </div>
+    </div>
+
+    <!-- POST /api/retrieve -->
+    <div class="glass rounded-2xl overflow-hidden">
+      <button class="w-full flex items-center justify-between gap-4 px-6 py-4 text-left" onclick="toggleCard('retrieve')">
+        <div class="flex items-center gap-3">
+          <span class="chip method-post text-[11px] px-2 py-0.5">POST</span>
+          <span class="endpoint-path">/api/retrieve</span>
+          <span class="text-xs text-zinc-600 hidden sm:inline">Semantic similarity search — returns top-k chunks with cosine scores</span>
+        </div>
+        <svg id="chevron-retrieve" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-zinc-600 flex-shrink-0 transition-transform duration-200"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <div id="body-retrieve" class="hidden px-6 pb-6 border-t" style="border-color:rgba(255,255,255,0.06)">
+        <div class="pt-4 mb-5 grid sm:grid-cols-2 gap-4">
+          <div>
+            <p class="text-[10px] text-zinc-600 uppercase tracking-wider mb-2">Request — application/json</p>
+            <div class="schema-block">
+              {<br>
+              &nbsp;&nbsp;<span class="k">"query"</span>: <span class="v">&lt;string&gt;</span>,<br>
+              &nbsp;&nbsp;<span class="opt k">"k"</span><span class="opt">?: &lt;number&gt; = 5</span><br>
+              }
+            </div>
+          </div>
+          <div>
+            <p class="text-[10px] text-zinc-600 uppercase tracking-wider mb-2">Response</p>
+            <div class="schema-block">
+              <span class="http-code-2">200</span> {<br>
+              &nbsp;&nbsp;<span class="k">"query"</span>: <span class="v">&lt;string&gt;</span>,<br>
+              &nbsp;&nbsp;<span class="k">"chunks"</span>: [{<br>
+              &nbsp;&nbsp;&nbsp;&nbsp;<span class="k">"content"</span>: <span class="v">&lt;string&gt;</span>,<br>
+              &nbsp;&nbsp;&nbsp;&nbsp;<span class="k">"source"</span>: <span class="v">&lt;string&gt;</span>,<br>
+              &nbsp;&nbsp;&nbsp;&nbsp;<span class="k">"score"</span>: <span class="v">&lt;float 0–1&gt;</span><br>
+              &nbsp;&nbsp;}]<br>
+              }
+            </div>
+          </div>
+        </div>
+        <div class="flex flex-wrap items-end gap-3 mb-4">
+          <div class="flex-1 min-w-[200px]">
+            <label class="text-[10px] text-zinc-600 uppercase tracking-wider block mb-1.5">query</label>
+            <input type="text" id="retrieve-query" placeholder="How does the Fed control inflation?" />
+          </div>
+          <div style="width:64px">
+            <label class="text-[10px] text-zinc-600 uppercase tracking-wider block mb-1.5">k</label>
+            <input type="number" id="retrieve-k" value="5" min="1" max="20" style="width:64px" />
+          </div>
+          <button class="run-btn" onclick="runRetrieve()">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M5 3l14 9-14 9V3z"/></svg>
+            Search
+          </button>
+        </div>
+        <div id="result-retrieve"></div>
+      </div>
+    </div>
+
+    <!-- DELETE /api/reset -->
+    <div class="glass rounded-2xl overflow-hidden">
+      <button class="w-full flex items-center justify-between gap-4 px-6 py-4 text-left" onclick="toggleCard('reset')">
+        <div class="flex items-center gap-3">
+          <span class="chip method-delete text-[11px] px-2 py-0.5">DELETE</span>
+          <span class="endpoint-path">/api/reset</span>
+          <span class="text-xs text-zinc-600 hidden sm:inline">Wipe the vector store — drops and recreates the LangChain collection</span>
+        </div>
+        <svg id="chevron-reset" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-zinc-600 flex-shrink-0 transition-transform duration-200"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <div id="body-reset" class="hidden px-6 pb-6 border-t" style="border-color:rgba(255,255,255,0.06)">
+        <div class="pt-4 mb-4">
+          <div class="schema-block">
+            <span class="http-code-2">200</span> { <span class="k">"status"</span>: <span class="v">"cleared"</span> }
+          </div>
+          <p class="text-xs text-zinc-600 mt-3">Deletes all chunks and embeddings. The collection is re-created immediately so the backend stays ready for new ingests.</p>
+        </div>
+        <button class="run-btn danger" onclick="runReset()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+          Clear vector store
+        </button>
+        <div id="result-reset" class="mt-4"></div>
+      </div>
+    </div>
+
+  </section>
+
+  <script>
+    function getBase() {
+      return document.getElementById('base-url-input').value.trim().replace(/\/$/, '');
+    }
+
+    function onBaseUrlChange() {
+      const v = getBase();
+      document.getElementById('url-dot').className =
+        'w-1.5 h-1.5 rounded-full inline-block ' + (v ? 'bg-emerald-400' : 'bg-amber-400');
+    }
+
+    function timingClass(ms) {
+      if (ms < 400) return 'timing-fast';
+      if (ms < 1200) return 'timing-mid';
+      return 'timing-slow';
+    }
+
+    function metaBar(ms, status, label) {
+      const cls = timingClass(ms);
+      const sc  = status < 300 ? 'http-code-2' : 'http-code-4';
+      return `<div class="flex items-center gap-3 mb-4 flex-wrap">
+        <span class="chip ${cls} text-[11px] px-2 py-1">⚡ ${ms}ms</span>
+        <span class="font-mono text-[11px] ${sc}">${status}</span>
+        <span class="text-xs text-zinc-500">${label}</span>
+      </div>`;
+    }
+
+    function rawJson(data) {
+      return `<details><summary>View raw JSON</summary><pre class="raw-json mt-2">${JSON.stringify(data, null, 2)}</pre></details>`;
+    }
+
+    function setLoading(id) {
+      document.getElementById(id).innerHTML =
+        `<div class="flex items-center gap-2 text-xs text-zinc-600"><div class="spinner"></div> Sending…</div>`;
+    }
+
+    function requireBase(id) {
+      if (!getBase()) {
+        document.getElementById(id).innerHTML =
+          `<div class="error-msg">Enter the backend base URL above first.</div>`;
+        return false;
+      }
+      return true;
+    }
+
+    function renderError(err, status) {
+      const sp = status ? `<span class="font-mono text-[11px] http-code-4 mr-2">${status}</span>` : '';
+      return `<div class="error-msg">${sp}${err.message || JSON.stringify(err)}</div>`;
+    }
+
+    function toggleCard(id) {
+      const body    = document.getElementById('body-' + id);
+      const chevron = document.getElementById('chevron-' + id);
+      const isOpen  = !body.classList.contains('hidden');
+      body.classList.toggle('hidden', isOpen);
+      chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
+    }
+
+    // GET /health
+    async function runHealth() {
+      if (!requireBase('result-health')) return;
+      setLoading('result-health');
+      const t0 = performance.now();
+      let res, json;
+      try {
+        res  = await fetch(`${getBase()}/health`);
+        json = await res.json();
+      } catch (e) {
+        document.getElementById('result-health').innerHTML = renderError(e);
+        return;
+      }
+      const ms = Math.round(performance.now() - t0);
+      document.getElementById('result-health').innerHTML =
+        metaBar(ms, res.status, res.ok ? 'backend is up' : 'backend error') +
+        (res.ok
+          ? `<div class="success-msg">✓ ${json.status}</div>`
+          : `<div class="error-msg">${JSON.stringify(json)}</div>`);
+    }
+
+    // POST /api/ingest
+    let _ingestFile = null;
+
+    function handleFileSelect(e) {
+      _ingestFile = e.target.files[0] || null;
+      document.getElementById('file-label').textContent =
+        _ingestFile ? _ingestFile.name : 'Click or drag a .txt / .md file';
+    }
+
+    function handleFileDrop(e) {
+      e.preventDefault();
+      document.getElementById('file-drop-zone').classList.remove('drag');
+      _ingestFile = e.dataTransfer.files[0] || null;
+      document.getElementById('file-label').textContent =
+        _ingestFile ? _ingestFile.name : 'Click or drag a .txt / .md file';
+    }
+
+    async function runIngest() {
+      if (!requireBase('result-ingest')) return;
+      const text   = document.getElementById('ingest-text').value.trim();
+      const source = document.getElementById('ingest-source').value.trim() || 'manual';
+      if (!text && !_ingestFile) {
+        document.getElementById('result-ingest').innerHTML =
+          `<div class="error-msg">Enter text or upload a file.</div>`;
+        return;
+      }
+      setLoading('result-ingest');
+      const fd = new FormData();
+      if (_ingestFile) { fd.append('file', _ingestFile); }
+      else             { fd.append('text', text); }
+      fd.append('source', source);
+
+      const t0 = performance.now();
+      let res, json;
+      try {
+        res  = await fetch(`${getBase()}/api/ingest`, { method: 'POST', body: fd });
+        json = await res.json();
+      } catch (e) {
+        document.getElementById('result-ingest').innerHTML = renderError(e);
+        return;
+      }
+      const ms = Math.round(performance.now() - t0);
+
+      if (!res.ok) {
+        document.getElementById('result-ingest').innerHTML =
+          metaBar(ms, res.status, 'error') +
+          `<div class="error-msg">${json.detail || JSON.stringify(json)}</div>`;
+        return;
+      }
+      document.getElementById('result-ingest').innerHTML =
+        metaBar(ms, res.status, `${json.chunks} chunks stored`) +
+        `<div class="success-msg">✓ Ingested <strong>${json.chunks}</strong> chunks from <code class="font-mono text-sm">${json.source}</code></div>` +
+        rawJson(json);
+    }
+
+    // POST /api/retrieve
+    async function runRetrieve() {
+      if (!requireBase('result-retrieve')) return;
+      const query = document.getElementById('retrieve-query').value.trim();
+      const k     = parseInt(document.getElementById('retrieve-k').value) || 5;
+      if (!query) {
+        document.getElementById('result-retrieve').innerHTML =
+          `<div class="error-msg">Enter a query.</div>`;
+        return;
+      }
+      setLoading('result-retrieve');
+      const t0 = performance.now();
+      let res, json;
+      try {
+        res  = await fetch(`${getBase()}/api/retrieve`, {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ query, k }),
+        });
+        json = await res.json();
+      } catch (e) {
+        document.getElementById('result-retrieve').innerHTML = renderError(e);
+        return;
+      }
+      const ms = Math.round(performance.now() - t0);
+
+      if (!res.ok) {
+        document.getElementById('result-retrieve').innerHTML =
+          metaBar(ms, res.status, 'error') +
+          `<div class="error-msg">${json.detail || JSON.stringify(json)}</div>`;
+        return;
+      }
+
+      const chunks = json.chunks || [];
+      const rows = chunks.map((c, i) => {
+        const pct = Math.round(c.score * 100);
+        return `<tr>
+          <td class="text-zinc-500 pr-2 text-[11px] font-mono align-top pt-2">${i + 1}</td>
+          <td class="align-top pt-2">
+            <div class="score-bar-wrap mb-1">
+              <div class="score-bar" style="width:${Math.max(pct, 4)}px"></div>
+              <span class="text-[11px] font-mono text-violet-400">${c.score.toFixed(4)}</span>
+              <span class="text-[10px] text-zinc-600">${c.source}</span>
+            </div>
+            <div class="chunk-content">${c.content}</div>
+          </td>
+        </tr>`;
+      }).join('');
+
+      document.getElementById('result-retrieve').innerHTML =
+        metaBar(ms, res.status, `${chunks.length} chunk${chunks.length !== 1 ? 's' : ''} returned`) +
+        (chunks.length
+          ? `<div class="overflow-x-auto rounded-xl mb-2" style="border:1px solid rgba(255,255,255,0.06)">
+               <table class="result-table"><tbody>${rows}</tbody></table>
+             </div>`
+          : `<div class="error-msg">No chunks matched — ingest some text first.</div>`) +
+        rawJson(json);
+    }
+
+    // DELETE /api/reset
+    async function runReset() {
+      if (!requireBase('result-reset')) return;
+      if (!confirm('Clear the entire vector store? All ingested chunks will be deleted.')) return;
+      setLoading('result-reset');
+      const t0 = performance.now();
+      let res, json;
+      try {
+        res  = await fetch(`${getBase()}/api/reset`, { method: 'DELETE' });
+        json = await res.json();
+      } catch (e) {
+        document.getElementById('result-reset').innerHTML = renderError(e);
+        return;
+      }
+      const ms = Math.round(performance.now() - t0);
+      document.getElementById('result-reset').innerHTML =
+        metaBar(ms, res.status, res.ok ? 'vector store cleared' : 'error') +
+        (res.ok
+          ? `<div class="success-msg">✓ ${json.status} — collection dropped and recreated</div>`
+          : `<div class="error-msg">${JSON.stringify(json)}</div>`);
+    }
+
+    // Keyboard shortcuts
+    document.getElementById('retrieve-query').addEventListener('keydown', e => {
+      if (e.key === 'Enter') runRetrieve();
+    });
+  </script>
+</body>
+</html>

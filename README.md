@@ -9,6 +9,17 @@ runtime — same interface, configurable `base_url`.
 
 ---
 
+## Using the App
+
+1. **Select topics** — toggle the Wikipedia topic chips in the left panel.
+2. **Choose depth** — **Summary** (default, ~1–2 chunks/topic, instant) or **Full Article** (~50–150 chunks/topic, ~$0.01 total OpenAI embedding cost).
+3. **Click Load Selected** — fetches, chunks, embeds, and stores; per-topic progress shows estimated chunks and elapsed seconds.
+4. **Ask a question** — pick from the **Sample questions** strip above the input, or type your own and press **Ask**.
+5. **Switch provider** — use the Anthropic / OpenAI / NVIDIA NIM toggle in the header at any time.
+6. **Custom documents** *(optional)* — expand **Custom Documents** to paste text or upload a `.txt` / `.md` file.
+
+---
+
 ## Running
 
 ```bash
@@ -106,45 +117,3 @@ sequenceDiagram
 | **Lambda cold start** | Mangum wraps FastAPI; `lifespan` hook runs `init_db()` on cold start; asyncpg pool uses `max_inactive_connection_lifetime=30` to handle Neon's auto-pause reconnection |
 | **No LLM response cache** | Same prompt + updated KB should return a different answer as documents change |
 
----
-
-## Live Service
-
-| | URL |
-|---|---|
-| **App** | https://d21n92v3nexm0p.cloudfront.net |
-| **API docs** | https://d21n92v3nexm0p.cloudfront.net/api/docs |
-
-```bash
-BASE=http://localhost:8001
-
-curl "$BASE/health"
-
-curl -X POST "$BASE/api/ingest" \
-  -F "text=The Federal Reserve sets interest rates to control inflation." \
-  -F "source=test"
-
-curl -X POST "$BASE/api/retrieve" \
-  -H "Content-Type: application/json" \
-  -d '{"query": "How does the Fed control inflation?", "k": 3}' | jq '.chunks[].score'
-```
-
----
-
-## Using the App
-
-1. **Select topics** — toggle the Wikipedia topic chips in the left panel.
-2. **Choose depth** — **Summary** (default, ~1–2 chunks/topic, instant) or **Full Article** (~50–150 chunks/topic, ~$0.01 total OpenAI embedding cost).
-3. **Click Load Selected** — fetches, chunks, embeds, and stores; per-topic progress shows estimated chunks and elapsed seconds.
-4. **Ask a question** — pick from the **Sample questions** strip above the input, or type your own and press **Ask**.
-5. **Switch provider** — use the Anthropic / OpenAI / NVIDIA NIM toggle in the header at any time.
-6. **Custom documents** *(optional)* — expand **Custom Documents** to paste text or upload a `.txt` / `.md` file.
-
----
-
-## Prerequisites for AWS deploy
-
-- AWS CLI configured (`aws configure`)
-- Terraform >= 1.5
-- Vercel CLI (`npm install -g vercel`) and logged in (`vercel login`)
-- A [Neon](https://neon.tech) free account — create a project, enable the `pgvector` extension, copy the connection string

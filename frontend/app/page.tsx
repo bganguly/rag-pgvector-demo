@@ -38,6 +38,14 @@ export default function Home() {
         </div>
 
         <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+          <a
+            href="/api-explorer.html"
+            className="hidden sm:inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-mono transition-colors"
+            style={{ color: "var(--text-2)", border: "1px solid var(--border)" }}
+          >
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            API
+          </a>
           <span
             className="hidden sm:inline text-xs font-mono uppercase tracking-wider"
             style={{ color: "var(--text-2)" }}
