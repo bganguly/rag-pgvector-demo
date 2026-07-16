@@ -9,6 +9,35 @@ Sister repo: [agent-orchestration-demo](https://github.com/bganguly/agent-orches
 
 ---
 
+## Running
+
+```bash
+./scripts/deploy.sh      # local [1], AWS ECS Fargate [2], or GCP Cloud Run [3]
+./scripts/infra-down.sh  # tear down local [1] or AWS [--aws] or GCP [--cloud]
+```
+
+### Cost control — scheduled 8am–5pm Pacific window (weekdays)
+
+ECS tasks start/stop on a weekday schedule managed by EventBridge Scheduler. RDS runs 24/7 — stopping it flushes the buffer pool, making the first retrieval of every morning slower.
+
+| Resource | Scale-up | Scale-down | ~$/mo |
+|---|---|---|---|
+| **ECS Fargate — frontend** (0.25 vCPU / 0.5 GB) | 8am PT Mon–Fri | 5pm PT Mon–Fri | ~$2 |
+| **ECS Fargate — backend** (0.5 vCPU / 1 GB) | 8am PT Mon–Fri | 5pm PT Mon–Fri | ~$4 |
+| **RDS db.t3.micro** + 20 GB storage | always-on | always-on | ~$14 |
+| **ALB** | always-on | always-on | ~$18 |
+| **Total** | | | **~$38–50/mo** |
+
+`./scripts/deploy.sh` shows an interactive prompt at the top of every remote run:
+
+```
+  Backend:  ACTIVE desired=1   Frontend: ACTIVE desired=1
+  Auto-schedule: 8 am start · 5 pm stop · weekdays PT · state=ENABLED
+  [1] Start now  [2] Stop now  [3] Suspend schedule  [4] Resume schedule  [enter] Full deploy:
+```
+
+---
+
 | | |
 |---|---|
 | **RAG pipeline** | LangChain `RecursiveCharacterTextSplitter` (800 chars / 150 overlap) → OpenAI `text-embedding-3-small` (1 536 dims) → pgvector cosine similarity |
@@ -85,36 +114,6 @@ sequenceDiagram
 | **Streaming** | Next.js API route proxies FastAPI retrieve call, then calls `streamText`; the AI SDK data-stream protocol delivers deltas directly to `useChat` — no polling |
 | **Provider abstraction** | `pickModel()` in `app/api/chat/route.ts` returns the SDK model object; the rest of the route is provider-agnostic |
 | **No LLM response cache** | Same prompt + updated KB should return a different answer as documents change; caching the retrieval step (not implemented) would be safe |
-| **No Docker locally** | Homebrew PostgreSQL + pgvector + Python venv + `npm dev` — `local-dev.sh` wires everything without containers |
-
----
-
-## Running
-
-```bash
-./scripts/deploy.sh      # local [1], AWS ECS Fargate [2], or GCP Cloud Run [3]
-./scripts/infra-down.sh  # tear down local [1] or AWS [--aws] or GCP [--cloud]
-```
-
-### Cost control — scheduled 8am–5pm Pacific window (weekdays)
-
-ECS tasks start/stop on a weekday schedule managed by EventBridge Scheduler. RDS runs 24/7 — stopping it flushes the buffer pool, making the first retrieval of every morning slower.
-
-| Resource | Scale-up | Scale-down | ~$/mo |
-|---|---|---|---|
-| **ECS Fargate — frontend** (0.25 vCPU / 0.5 GB) | 8am PT Mon–Fri | 5pm PT Mon–Fri | ~$2 |
-| **ECS Fargate — backend** (0.5 vCPU / 1 GB) | 8am PT Mon–Fri | 5pm PT Mon–Fri | ~$4 |
-| **RDS db.t3.micro** + 20 GB storage | always-on | always-on | ~$14 |
-| **ALB** | always-on | always-on | ~$18 |
-| **Total** | | | **~$38–50/mo** |
-
-`./scripts/deploy.sh` shows an interactive prompt at the top of every remote run:
-
-```
-  Backend:  ACTIVE desired=1   Frontend: ACTIVE desired=1
-  Auto-schedule: 8 am start · 5 pm stop · weekdays PT · state=ENABLED
-  [1] Start now  [2] Stop now  [3] Suspend schedule  [4] Resume schedule  [enter] Full deploy:
-```
 
 ---
 
@@ -138,32 +137,6 @@ curl -X POST "$BASE/api/retrieve" \
   -H "Content-Type: application/json" \
   -d '{"query": "How does the Fed control inflation?", "k": 3}' | jq '.chunks[].score'
 ```
-
----
-
-## Local Dev (no Docker)
-
-### Prerequisites
-
-```bash
-brew install postgresql@16 pgvector node python@3.12
-brew services start postgresql@16
-```
-
-### Start
-
-```bash
-cp .env.example .env   # fill in OPENAI_API_KEY (required); ANTHROPIC_API_KEY and NVIDIA_API_KEY optional
-./scripts/local-dev.sh
-./scripts/local-dev.sh --seed   # also loads Wikipedia articles on first run
-```
-
-| | |
-|---|---|
-| App | http://localhost:3010 |
-| FastAPI docs | http://localhost:8001/docs |
-
-The script creates the `ragdb` database, enables the `vector` extension, sets up the Python venv, and starts both services.
 
 ---
 
