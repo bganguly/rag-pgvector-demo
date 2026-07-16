@@ -5,7 +5,7 @@ OpenAI embeddings stored in **pgvector**, cosine-similarity retrieval, and token
 **Vercel AI SDK**. Provider toggle switches between Anthropic, OpenAI, and **NVIDIA NIM (Nemotron)** at
 runtime — same interface, configurable `base_url`.
 
-Sister repo: [agent-orchestration-demo](https://github.com/bganguly/agent-orchestration-demo)
+**[Live demo →](https://bganguly.github.io/?open=rag)**
 
 ---
 
