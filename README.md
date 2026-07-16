@@ -24,26 +24,56 @@ Sister repo: [agent-orchestration-demo](https://github.com/bganguly/agent-orches
 
 ## Architecture
 
-```
-Browser ──HTTP──► CloudFront ──► ALB ──► ECS Fargate :3010 (Next.js)
-                                               │
-                        ┌──────────────────────┤
-                        │                      │
-                        ▼                      ▼
-           /api/retrieve (proxy)       Vercel AI SDK streamText
-                        │                      │
-                        ▼                      ▼
-           ECS Fargate :8001 (FastAPI)    LLM provider
-                        │              (Anthropic / OpenAI / NVIDIA NIM)
-                   LangChain pipeline
-                   OpenAI embeddings
-                   pgvector (RDS PG16)
+### Ingest flow
 
-Ingest path:
-  UI topic select / file upload ──► Next.js /api/ingest ──► FastAPI /api/ingest
-                                                              LangChain splitter
-                                                              OpenAI embed → pgvector
+```mermaid
+sequenceDiagram
+    participant B as Browser
+    participant N as Next.js :3010
+    participant F as FastAPI :8001
+    participant LC as LangChain
+    participant PG as pgvector (RDS PG16)
+
+    B->>N: POST /api/ingest (file or pasted text)
+    N->>F: POST /api/ingest :8001 (proxy)
+    F->>LC: raw text string
+    Note over LC: RecursiveCharacterTextSplitter<br/>800 chars · 150 overlap
+    LC->>LC: OpenAIEmbeddings<br/>text-embedding-3-small → 1536-dim vectors
+    LC->>PG: PGVector.aadd_documents()<br/>upsert chunks + embeddings
+    PG-->>B: { chunks: N } ✓
 ```
+
+### Chat / query flow
+
+```mermaid
+sequenceDiagram
+    participant B as Browser
+    participant N as Next.js :3010
+    participant F as FastAPI :8001
+    participant LC as LangChain
+    participant PG as pgvector (RDS PG16)
+    participant AI as Vercel AI SDK
+    participant LLM as LLM Provider
+
+    B->>N: POST /api/chat { query, provider }
+    N->>F: POST /api/retrieve { query, k:5 }
+    F->>LC: query string
+    LC->>PG: embed query → cosine similarity search
+    PG-->>N: top-5 chunks + relevance scores
+    Note over N: inject chunks into system prompt
+    N->>AI: streamText(model, context + query)
+    AI->>LLM: grounded request<br/>(claude-haiku-4-5 / gpt-4o-mini / nemotron)
+    LLM-->>B: token stream via SSE data-stream protocol
+```
+
+### What LangChain replaces
+
+| Component | Without LangChain | Why it matters |
+|---|---|---|
+| `RecursiveCharacterTextSplitter` | Manual regex split + overlap bookkeeping | Overlap prevents semantic units being cut at chunk boundaries — retrieval precision drops without it |
+| `OpenAIEmbeddings` | Raw `openai.embeddings.create()` + batching | Guarantees same model ID at ingest and query time — a mismatch silently breaks cosine scores |
+| `PGVector.aadd_documents()` | `CREATE TABLE`, `CREATE INDEX`, parameterised `INSERT` per chunk | Schema + IVFFlat index provisioned automatically on startup; no migrations to write |
+| `PGVector.similarity_search_with_relevance_scores()` | Embed query → `SELECT … ORDER BY embedding <=> $1 LIMIT k` | One call returns typed `(Document, float)` tuples that map directly to the API response |
 
 ### Key design decisions
 
