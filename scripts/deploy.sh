@@ -292,7 +292,11 @@ AWS_REGION=$(aws configure get region 2>/dev/null || echo "us-east-1")
 
 echo ""
 echo "[2/5] Provisioning AWS infra (Lambda, ECR, CodeBuild, S3)..."
-"$ROOT/scripts/infra-up-aws.sh"
+cd "$ROOT/infra/aws"
+terraform init -upgrade -input=false
+terraform workspace select "$DEPLOY_WORKSPACE" 2>/dev/null \
+  || terraform workspace new "$DEPLOY_WORKSPACE"
+terraform apply -auto-approve -var "name_prefix=${TF_VAR_name_prefix}"
 
 INFRA_DIR="$ROOT/infra/aws"
 cd "$INFRA_DIR"

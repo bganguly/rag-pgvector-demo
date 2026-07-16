@@ -89,8 +89,9 @@ npm --prefix "$FRONTEND" run dev &
 FRONTEND_PID=$!
 
 green ""
-green "  App      → http://localhost:3010"
-green "  API docs → http://localhost:8001/docs"
+green "  App          → http://localhost:3010"
+green "  API explorer → http://localhost:3010/api-explorer.html"
+green "  Backend      → http://localhost:8001"
 green ""
 green "  Press Ctrl-C to stop both services."
 
