@@ -95,21 +95,89 @@ if ! terraform workspace select "$DEPLOY_WORKSPACE" 2>/dev/null; then
   exit 0
 fi
 
-# count live resources
-_count_resources() {
-  local state_file="$INFRA_DIR/terraform.tfstate.d/$DEPLOY_WORKSPACE/terraform.tfstate"
-  [[ -f "$state_file" ]] || { printf '0'; return; }
-  python3 -c "
-import json
-with open('$state_file') as f:
-  d = json.load(f)
-print(sum(len(r.get('instances', [])) for r in d.get('resources', []) if r.get('instances')))
-" 2>/dev/null || printf '0'
+STATE_FILE="$INFRA_DIR/terraform.tfstate.d/$DEPLOY_WORKSPACE/terraform.tfstate"
+
+# outputs "<total>|db:cur/ini  sg:cur/ini  ..." reading INIT_FILE for initial counts
+_group_stats() {
+  local init_file="${1:-}"
+  python3 - "$STATE_FILE" "$init_file" <<'PYEOF'
+import json, sys
+state_path = sys.argv[1]
+init_path  = sys.argv[2] if len(sys.argv) > 2 else ''
+GROUPS = [
+  ('db',    ['aws_db_instance','aws_db_subnet_group']),
+  ('sg',    ['aws_security_group']),
+  ('ecs',   ['aws_ecs_cluster','aws_ecs_service','aws_ecs_task_definition']),
+  ('cf',    ['aws_cloudfront_distribution']),
+  ('ecr',   ['aws_ecr_repository','aws_ecr_lifecycle_policy']),
+  ('alb',   ['aws_lb','aws_lb_listener','aws_lb_target_group']),
+  ('vpc',   ['aws_vpc','aws_subnet','aws_internet_gateway','aws_route_table','aws_route_table_association']),
+  ('iam',   ['aws_iam_role','aws_iam_role_policy','aws_iam_role_policy_attachment']),
+  ('cb',    ['aws_codebuild_project']),
+  ('s3',    ['aws_s3_bucket','aws_s3_bucket_lifecycle_configuration']),
+  ('sched', ['aws_scheduler_schedule']),
+  ('logs',  ['aws_cloudwatch_log_group']),
+]
+try:
+  d = json.load(open(state_path))
+except Exception:
+  print('0|'); sys.exit()
+counts = {}
+total  = 0
+for r in d.get('resources', []):
+  n = len(r.get('instances', []))
+  if n: counts[r['type']] = counts.get(r['type'], 0) + n; total += n
+init = {}
+if init_path:
+  try:
+    for line in open(init_path):
+      if ':' in line: k, v = line.strip().split(':', 1); init[k] = int(v)
+  except Exception: pass
+parts = []
+for label, types in GROUPS:
+  cur = sum(counts.get(t, 0) for t in types)
+  ini = init.get(label, cur)
+  if ini > 0: parts.append(f'{label}:{cur}/{ini}')
+print(f'{total}|' + '  '.join(parts))
+PYEOF
 }
 
-_BEFORE=$(_count_resources)
+# snapshot initial group counts to a temp file
+INIT_FILE="$(mktemp /tmp/tf-init-XXXX.txt)"
+_RAW=$(_group_stats "")
+_BEFORE="${_RAW%%|*}"
+python3 - "$STATE_FILE" "$INIT_FILE" <<'PYEOF'
+import json, sys
+state_path, out_path = sys.argv[1], sys.argv[2]
+GROUPS = [
+  ('db',    ['aws_db_instance','aws_db_subnet_group']),
+  ('sg',    ['aws_security_group']),
+  ('ecs',   ['aws_ecs_cluster','aws_ecs_service','aws_ecs_task_definition']),
+  ('cf',    ['aws_cloudfront_distribution']),
+  ('ecr',   ['aws_ecr_repository','aws_ecr_lifecycle_policy']),
+  ('alb',   ['aws_lb','aws_lb_listener','aws_lb_target_group']),
+  ('vpc',   ['aws_vpc','aws_subnet','aws_internet_gateway','aws_route_table','aws_route_table_association']),
+  ('iam',   ['aws_iam_role','aws_iam_role_policy','aws_iam_role_policy_attachment']),
+  ('cb',    ['aws_codebuild_project']),
+  ('s3',    ['aws_s3_bucket','aws_s3_bucket_lifecycle_configuration']),
+  ('sched', ['aws_scheduler_schedule']),
+  ('logs',  ['aws_cloudwatch_log_group']),
+]
+try: d = json.load(open(state_path))
+except: d = {}
+counts = {}
+for r in d.get('resources', []):
+  n = len(r.get('instances', []))
+  if n: counts[r['type']] = counts.get(r['type'], 0) + n
+with open(out_path, 'w') as f:
+  for label, types in GROUPS:
+    c = sum(counts.get(t, 0) for t in types)
+    if c > 0: f.write(f'{label}:{c}\n')
+PYEOF
+
 if [[ "$_BEFORE" == "0" ]]; then
   green 'Workspace is already empty — nothing to destroy.'
+  rm -f "$INIT_FILE"
   exit 0
 fi
 
@@ -117,7 +185,7 @@ printf '\n  Resources currently in state: %s\n' "$_BEFORE"
 printf '  This will destroy: ECS, ALB, RDS, CloudFront, VPC, ECR, CodeBuild, S3\n'
 printf '\n  Proceed? [Y/n]: '
 read -r _CONFIRM
-[[ "${_CONFIRM:-y}" =~ ^[Yy]$ ]] || { red 'Aborted.'; exit 1; }
+[[ "${_CONFIRM:-y}" =~ ^[Yy]$ ]] || { red 'Aborted.'; rm -f "$INIT_FILE"; exit 1; }
 
 # run destroy in background, poll progress
 bold '\nRunning terraform destroy...'
@@ -132,37 +200,30 @@ _elapsed=0
 _last_destroyed=()
 
 _print_progress() {
-  local cur="$1" elapsed="$2" frame="$3"
-  # clear current line then print spinner + counts
-  printf '\r\033[K  %s  [%3ds]  %s / %s resources remaining' \
-    "$frame" "$elapsed" "$cur" "$_BEFORE"
-
-  # parse newly destroyed resources from log since last check
-  local new_destroyed
-  new_destroyed=$(grep -oP '(?<=Destroy complete! Resources: )\d+' "$LOG_FILE" 2>/dev/null | tail -1 || true)
-
+  local elapsed="$1" frame="$2"
+  local raw groups total
+  raw=$(_group_stats "$INIT_FILE")
+  total="${raw%%|*}"
+  groups="${raw#*|}"
   # print any newly completed resource lines from the log
-  local completed
-  completed=$(grep -E '^\s*(aws_|random_)[^:]+: Destruction complete' "$LOG_FILE" 2>/dev/null \
-    | sed 's/.*Destruction complete.*//' \
-    | awk '{print $1}' | sort -u || true)
+  local completed line
+  completed=$(grep -E ': Destruction complete' "$LOG_FILE" 2>/dev/null \
+    | grep -oE '^[^:]+' | sed 's/^[[:space:]]*//' | sort -u || true)
   if [[ -n "$completed" ]]; then
-    local line
     while IFS= read -r line; do
-      if [[ -n "$line" ]] && ! printf '%s\n' "${_last_destroyed[@]:-}" | grep -qF "$line"; then
+      if [[ -n "$line" ]] && ! printf '%s\n' "${_last_destroyed[@]:-}" | grep -qxF "$line"; then
         _last_destroyed+=("$line")
-        printf '\n  \033[32m✓\033[0m %s' "$line"
+        printf '\r\033[K  \033[32m✓\033[0m %s\n' "$line"
       fi
     done <<< "$completed"
-    printf '\r\033[K  %s  [%3ds]  %s / %s resources remaining' \
-      "$frame" "$elapsed" "$cur" "$_BEFORE"
   fi
+  printf '\r\033[K  %s  [%3ds]  %s/%s remaining  —  %s' \
+    "$frame" "$elapsed" "$total" "$_BEFORE" "$groups"
 }
 
 while kill -0 "$TF_PID" 2>/dev/null; do
-  _cur=$(_count_resources)
   _frame="${_spinner_frames[$(( _si % ${#_spinner_frames[@]} ))]}"
-  _print_progress "$_cur" "$_elapsed" "$_frame"
+  _print_progress "$_elapsed" "$_frame"
   _si=$(( _si + 1 ))
   _elapsed=$(( _elapsed + 3 ))
   sleep 3
@@ -171,6 +232,7 @@ done
 # capture exit code
 wait "$TF_PID" && _TF_EXIT=0 || _TF_EXIT=$?
 printf '\n'
+rm -f "$INIT_FILE"
 
 if [[ "$_TF_EXIT" -ne 0 ]]; then
   red 'terraform destroy failed. Last 30 lines of output:'
@@ -179,7 +241,8 @@ if [[ "$_TF_EXIT" -ne 0 ]]; then
   exit 1
 fi
 
-_AFTER=$(_count_resources)
+_AFTER_RAW=$(_group_stats "")
+_AFTER="${_AFTER_RAW%%|*}"
 if [[ "$_AFTER" -gt 0 ]]; then
   red "Destroy completed but $_AFTER resources still in state — check AWS console."
   red "Log: $LOG_FILE"
