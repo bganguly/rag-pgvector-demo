@@ -97,6 +97,12 @@ export default function SeedPanel({ onReady }: { onReady?: () => void }) {
   function selectAll() { setSelected(new Set(TOPICS.map((t) => t.id))); }
   function clearAll()  { setSelected(new Set()); }
 
+  async function resetKB() {
+    setStates(blank());
+    setSelected(new Set());
+    await fetch("/api/reset", { method: "DELETE" }).catch(() => null);
+  }
+
   async function load(clearFirst = false) {
     const batch = clearFirst
       ? TOPICS.filter((t) => selected.has(t.id))
@@ -294,29 +300,14 @@ export default function SeedPanel({ onReady }: { onReady?: () => void }) {
           >
             ✓ Ready — ask a question in the chat
           </div>
-          <div className="flex gap-4 justify-center">
+          <div className="flex justify-center">
             <button
-              onClick={() => load(true)}
+              onClick={resetKB}
               className="flex flex-col items-center gap-0.5"
             >
-              <span className="text-xs underline" style={{ color: "#ef4444" }}>↺ Reset &amp; Reload</span>
-              <span className="text-[10px]" style={{ color: "var(--text-2)" }}>clears knowledge base · re-fetches selected</span>
+              <span className="text-xs underline" style={{ color: "#ef4444" }}>✕ Clean ingested data</span>
+              <span className="text-[10px]" style={{ color: "var(--text-2)" }}>clears knowledge base · does not re-fetch</span>
             </button>
-            {moreAvailable && (
-              <button
-                onClick={() => load(false)}
-                disabled={selectedCount === 0}
-                className="flex flex-col items-center gap-0.5"
-                style={{ opacity: selectedCount === 0 ? 0.5 : 1 }}
-              >
-                <span className="text-xs underline" style={{ color: "var(--text-2)" }}>
-                  + Load More{selectedCount > 0 ? ` (${selectedCount})` : ""}
-                </span>
-                <span className="text-[10px]" style={{ color: "var(--text-2)" }}>
-                  {selectedCount > 0 ? "keeps existing · adds selected topics" : "pick more topics above · keeps existing"}
-                </span>
-              </button>
-            )}
           </div>
         </>
       ) : (
