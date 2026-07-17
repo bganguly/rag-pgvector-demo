@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
-# infra-down.sh — tear down local processes, AWS Lambda stack, or GCP Cloud Run
+# infra-down.sh — tear down local processes or AWS Lambda stack
 # Usage: ./scripts/infra-down.sh
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-ENV_FILE="$ROOT/.env.gcp"
 
 bold()  { printf '\033[1m%s\033[0m\n' "$*"; }
 green() { printf '\033[32m%s\033[0m\n' "$*"; }
@@ -14,8 +13,7 @@ dim()   { printf '\033[2m%s\033[0m\n' "$*"; }
 printf '\n=== rag-pgvector-demo — tear down ===\n\n'
 printf '  [1] Local   — stop uvicorn + Next.js processes\n'
 printf '  [2] AWS     — destroy Lambda, ECR, CodeBuild, S3, VPC (workspace: lite)\n'
-printf '  [3] GCP     — delete Cloud Run services + Cloud SQL\n'
-printf '\nChoice [1/2/3]: '
+printf '\nChoice [1/2]: '
 read -r _MODE
 
 # ── local ────────────────────────────────────────────────────────────────────
@@ -24,32 +22,6 @@ if [[ "$_MODE" == "1" ]]; then
   pkill -f "uvicorn app.main:app" 2>/dev/null && green '  uvicorn stopped' || dim '  uvicorn not running'
   pkill -f "next dev"             2>/dev/null && green '  Next.js stopped' || dim '  Next.js not running'
   green 'Done.'
-  exit 0
-fi
-
-# ── GCP ──────────────────────────────────────────────────────────────────────
-if [[ "$_MODE" == "3" ]]; then
-  [[ -f "$ENV_FILE" ]] || { red '.env.gcp not found — nothing to tear down.'; exit 0; }
-  source "$ENV_FILE"
-  bold "Tearing down GCP resources for project $GCP_PROJECT..."
-
-  gcloud run services delete rag-frontend \
-    --region="$GCP_REGION" --project="$GCP_PROJECT" --quiet 2>/dev/null \
-    && green '  rag-frontend deleted' || dim '  rag-frontend not found'
-
-  gcloud run services delete rag-backend \
-    --region="$GCP_REGION" --project="$GCP_PROJECT" --quiet 2>/dev/null \
-    && green '  rag-backend deleted' || dim '  rag-backend not found'
-
-  if [[ -n "${DB_INSTANCE:-}" ]]; then
-    bold "Deleting Cloud SQL instance $DB_INSTANCE..."
-    gcloud sql instances delete "$DB_INSTANCE" \
-      --project="$GCP_PROJECT" --quiet 2>/dev/null \
-      && green "  $DB_INSTANCE deleted" || dim '  Cloud SQL instance not found'
-  fi
-
-  rm -f "$ENV_FILE"
-  green 'GCP infrastructure torn down.'
   exit 0
 fi
 
