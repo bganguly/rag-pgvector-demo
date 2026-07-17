@@ -112,10 +112,10 @@ echo ""
 echo "[3/5] Neon database setup..."
 _OLD_DB_URL=$(aws ssm get-parameter --name "/${TF_VAR_name_prefix}/database-url" --with-decryption --query Parameter.Value --output text 2>/dev/null || echo "")
 if [[ -n "$_OLD_DB_URL" ]]; then
-  printf '  DATABASE_URL already set in SSM: %s...\n' "${_OLD_DB_URL:0:40}"
-  printf '  Update? [y/N]: '
+  printf '  Use stored DATABASE_URL (%s...) (Y/n): ' "${_OLD_DB_URL:0:40}"
   read -r _UPD_DB
-  if [[ "${_UPD_DB:-n}" =~ ^[Yy]$ ]]; then _OLD_DB_URL=""; fi
+  _UPD_DB="${_UPD_DB:-Y}"
+  if [[ ! "$_UPD_DB" =~ ^[Yy] ]]; then _OLD_DB_URL=""; fi
 fi
 if [[ -z "$_OLD_DB_URL" ]]; then
   printf '  Paste your Neon DATABASE_URL (postgresql://...neon.tech/...?sslmode=require):\n  > '
@@ -134,10 +134,11 @@ _prompt_key() {
   local _label="$1" _cur="${2:-}" _req="${3:-optional}"
   local _ans _val
   if [[ -n "$_cur" ]]; then
-    printf '  %-24s  %s...%s  update? [y/N]: ' \
+    printf '  %-24s  stored: %s...%s  use it? (Y/n): ' \
       "$_label" "${_cur:0:8}" "${_cur: -4}" >&2
     read -r _ans
-    if [[ "$_ans" =~ ^[Yy]$ ]]; then
+    _ans="${_ans:-Y}"
+    if [[ ! "$_ans" =~ ^[Yy] ]]; then
       printf '  New value: ' >&2; read -rs _val; printf '\n' >&2
       printf '%s' "${_val:-$_cur}"
     else
