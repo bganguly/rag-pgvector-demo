@@ -60,11 +60,15 @@ ${chunks.map((c, i) => `[${i + 1}] (source: ${c.source})\n${c.content}`).join("\
 Begin your response with exactly this line: "**Generic LLM response** (not from loaded context)"
 Then answer the question from your general knowledge.`;
 
-  const result = streamText({
-    model: pickModel(provider),
-    system,
-    messages,
-  });
-
-  return result.toDataStreamResponse();
+  try {
+    const result = streamText({
+      model: pickModel(provider),
+      system,
+      messages,
+    });
+    return result.toDataStreamResponse();
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return Response.json({ error: msg }, { status: 502 });
+  }
 }

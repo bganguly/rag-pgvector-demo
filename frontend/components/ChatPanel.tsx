@@ -19,8 +19,23 @@ const SUGGESTED = [
 ];
 
 export default function ChatPanel({ provider, ingested }: { provider: Provider; ingested: boolean }) {
+  const [apiErrorMsg, setApiErrorMsg] = useState<string | null>(null);
+
   const { messages, input, handleInputChange, isLoading, error, setMessages, setInput, append } =
-    useChat({ api: "/api/chat", body: { provider } });
+    useChat({
+      api: "/api/chat",
+      body: { provider },
+      onError: async (err) => {
+        const raw = (err as { responseBody?: string }).responseBody;
+        if (raw) {
+          try {
+            const parsed = JSON.parse(raw);
+            if (parsed.error) { setApiErrorMsg(parsed.error); return; }
+          } catch {}
+        }
+        setApiErrorMsg(err.message ?? null);
+      },
+    });
 
   const [ctxByExchange, setCtxByExchange] = useState<Chunk[][]>([]);
   const [expanded, setExpanded]           = useState<Set<number>>(new Set());
@@ -34,6 +49,7 @@ export default function ChatPanel({ provider, ingested }: { provider: Provider; 
   async function submitQuery(query: string) {
     const q = query.trim();
     if (!q || isLoading) return;
+    setApiErrorMsg(null);
 
     const exchangeIdx = messages.filter((m) => m.role === "user").length;
 
@@ -188,9 +204,11 @@ export default function ChatPanel({ provider, ingested }: { provider: Provider; 
               className="rounded-lg px-4 py-2.5 text-sm max-w-[80%]"
               style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.3)", color: "#ef4444" }}
             >
-              {provider === "nim"
-                ? "NVIDIA NIM error — API key may be expired or quota exhausted. Generate a new key at build.nvidia.com."
-                : "An error occurred. Check your API key and try again."}
+              {apiErrorMsg
+                ? `${provider === "nim" ? "NVIDIA NIM" : provider === "openai" ? "OpenAI" : "Anthropic"} error — ${apiErrorMsg}`
+                : provider === "nim"
+                  ? "NVIDIA NIM error — check your API key and quota at build.nvidia.com."
+                  : "An error occurred. Check your API key and try again."}
             </div>
           </div>
         )}
