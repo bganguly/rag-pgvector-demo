@@ -101,6 +101,7 @@ _tf() { terraform output -raw "$1" 2>/dev/null; }
 # Phase 1 — ECR, S3, IAM, CodeBuild only; Lambda requires the image to exist in ECR first
 terraform apply -auto-approve -var "name_prefix=${TF_VAR_name_prefix}" \
   -target=aws_codebuild_project.backend \
+  -target=aws_iam_role_policy.codebuild \
   -target=aws_s3_bucket_lifecycle_configuration.build_artifacts
 
 BE_ECR_URI=$(_tf backend_ecr_uri)
