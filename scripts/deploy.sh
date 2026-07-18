@@ -104,7 +104,7 @@ terraform apply -auto-approve -var "name_prefix=${TF_VAR_name_prefix}" \
   -target=aws_s3_bucket_lifecycle_configuration.build_artifacts
 
 BE_ECR_URI=$(_tf backend_ecr_uri)
-AWS_REGION=$(_tf aws_region)
+AWS_REGION=$(_tf aws_region || aws configure get region 2>/dev/null || echo "us-east-1")
 BUILD_BUCKET=$(_tf build_bucket)
 CB_BE_PROJECT=$(_tf codebuild_backend_project)
 
