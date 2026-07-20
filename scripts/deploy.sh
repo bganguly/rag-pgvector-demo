@@ -94,6 +94,7 @@ echo "[2/5] Provisioning bootstrap infra (ECR, IAM)..."
 INFRA_DIR="$ROOT/infra/aws"
 cd "$INFRA_DIR"
 terraform init -upgrade -input=false
+printf '  Selecting workspace and pruning stale state...\n'
 terraform workspace select "$DEPLOY_WORKSPACE" 2>/dev/null \
   || terraform workspace new "$DEPLOY_WORKSPACE"
 
