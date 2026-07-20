@@ -89,6 +89,15 @@ printf '  Credentials valid: %s\n' "$(aws sts get-caller-identity --query 'Arn' 
 
 AWS_REGION=$(aws configure get region 2>/dev/null || echo "us-east-1")
 
+_GH_REPO="$(git -C "$ROOT" remote get-url origin 2>/dev/null \
+  | sed 's|.*github\.com[:/]\(.*\)\.git$|\1|; s|.*github\.com[:/]\(.*\)$|\1|')"
+if command -v gh >/dev/null 2>&1 && [[ -n "$_GH_REPO" ]]; then
+  printf '  Syncing AWS credentials to GitHub Actions secrets (%s)...\n' "$_GH_REPO"
+  aws configure get aws_access_key_id     | gh secret set AWS_ACCESS_KEY_ID     --repo "$_GH_REPO"
+  aws configure get aws_secret_access_key | gh secret set AWS_SECRET_ACCESS_KEY --repo "$_GH_REPO"
+  printf '%s' "$AWS_REGION"               | gh secret set AWS_REGION            --repo "$_GH_REPO"
+fi
+
 echo ""
 echo "[2/5] Provisioning bootstrap infra (ECR, IAM)..."
 INFRA_DIR="$ROOT/infra/aws"
