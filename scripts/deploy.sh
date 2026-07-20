@@ -18,8 +18,9 @@ printf '  [1] Local   — uvicorn + npm dev, no Docker (Postgres via .env)'
 printf '\n'
 printf '  [2] Serverless — AWS Lambda + Neon + Vercel  (~$0/mo)'
 (( _aws_lite_count > 0 )) && printf ' [%s resources active]' "$_aws_lite_count" || printf ' [not deployed]'
-printf '\n\nChoice [1/2]: '
+printf '\n\nChoice [1/2, default=2]: '
 read -r _MODE
+_MODE="${_MODE:-2}"
 case "$_MODE" in
   2) TARGET="aws"; DEPLOY_WORKSPACE="lite"; TF_VAR_name_prefix="rag-lite"
      export DEPLOY_WORKSPACE TF_VAR_name_prefix
