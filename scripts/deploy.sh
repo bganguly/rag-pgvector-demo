@@ -96,10 +96,21 @@ terraform init -upgrade -input=false
 terraform workspace select "$DEPLOY_WORKSPACE" 2>/dev/null \
   || terraform workspace new "$DEPLOY_WORKSPACE"
 
-terraform state rm aws_codebuild_project.backend                   2>/dev/null || true
-terraform state rm aws_iam_role_policy.codebuild                   2>/dev/null || true
-terraform state rm aws_iam_role.codebuild                          2>/dev/null || true
+terraform state rm aws_codebuild_project.backend                        2>/dev/null || true
+terraform state rm aws_iam_role_policy.codebuild                        2>/dev/null || true
+terraform state rm aws_iam_role.codebuild                               2>/dev/null || true
 terraform state rm aws_s3_bucket_lifecycle_configuration.build_artifacts 2>/dev/null || true
+
+_STATE_FILE="$INFRA_DIR/terraform.tfstate.d/${DEPLOY_WORKSPACE}/terraform.tfstate"
+if [[ -f "$_STATE_FILE" ]]; then
+  python3 -c "
+import json
+with open('$_STATE_FILE') as f: s = json.load(f)
+for k in ('codebuild_backend_project', 'build_bucket'):
+    s.get('outputs', {}).pop(k, None)
+with open('$_STATE_FILE', 'w') as f: json.dump(s, f, indent=2)
+" 2>/dev/null || true
+fi
 
 _tf() { terraform output -raw "$1" 2>/dev/null; }
 
