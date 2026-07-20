@@ -200,19 +200,25 @@ _ecr_image_exists() {
 }
 
 BE_REPO_NAME="${TF_VAR_name_prefix}-backend"
-if _ecr_image_exists "$BE_REPO_NAME" "$TAG"; then
-  printf '  Backend image %s already in ECR — skipping build.\n' "$TAG"
-  _MANIFEST=$(aws ecr batch-get-image --repository-name "$BE_REPO_NAME" \
-    --image-ids "imageTag=${TAG}" --query 'images[0].imageManifest' \
-    --output text --no-cli-pager 2>/dev/null)
-  aws ecr put-image --repository-name "$BE_REPO_NAME" --image-tag latest \
-    --image-manifest "$_MANIFEST" --no-cli-pager >/dev/null 2>&1 \
-    && printf '  Re-tagged %s as latest.\n' "$TAG" || true
-else
-  printf '  ERROR: Backend image %s not found in ECR (%s).\n' "$TAG" "$BE_REPO_NAME"
-  printf '  Push to main to trigger the GitHub Actions build, then re-run this script.\n'
-  exit 1
+if ! _ecr_image_exists "$BE_REPO_NAME" "$TAG"; then
+  printf '  Image %s not in ECR yet — waiting for GitHub Actions build (up to 10 min)...\n' "$TAG"
+  _ecr_elapsed=0
+  until _ecr_image_exists "$BE_REPO_NAME" "$TAG"; do
+    if (( _ecr_elapsed >= 600 )); then
+      printf '  Timed out waiting for %s. Check Actions: https://github.com/bganguly/rag-pgvector-demo/actions\n' "$TAG"
+      exit 1
+    fi
+    sleep 15; _ecr_elapsed=$(( _ecr_elapsed + 15 ))
+    printf '  ...%ds\n' "$_ecr_elapsed"
+  done
 fi
+printf '  Backend image %s found in ECR.\n' "$TAG"
+_MANIFEST=$(aws ecr batch-get-image --repository-name "$BE_REPO_NAME" \
+  --image-ids "imageTag=${TAG}" --query 'images[0].imageManifest' \
+  --output text --no-cli-pager 2>/dev/null)
+aws ecr put-image --repository-name "$BE_REPO_NAME" --image-tag latest \
+  --image-manifest "$_MANIFEST" --no-cli-pager >/dev/null 2>&1 \
+  && printf '  Re-tagged %s as latest.\n' "$TAG" || true
 
 echo "  Finalising Lambda and remaining infra..."
 cd "$INFRA_DIR"
