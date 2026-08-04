@@ -375,17 +375,25 @@
       chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
     }
 
-    // GET /health — with cold-start note after 5s
+    // GET /health — indicator at 250ms, cold-start note at 5s, fade on response
     async function runHealth() {
       if (!requireBase('result-health')) return;
-      setLoading('result-health');
       const el = document.getElementById('result-health');
 
-      const coldTimer = setTimeout(() => {
+      const setHealthLoading = (note) => {
         el.innerHTML =
+          `<div id="health-loading" style="transition:opacity 0.25s ease">` +
           `<div class="flex items-center gap-2 text-xs text-zinc-600"><div class="spinner"></div> Sending…</div>` +
-          `<p class="cold-note">Still waiting — Lambda may be cold-starting. First request typically takes 10–15 s; warm requests return in ~120 ms.</p>`;
-      }, 5000);
+          (note ? `<p class="cold-note">${note}</p>` : '') +
+          `</div>`;
+      };
+      setHealthLoading();
+
+      const earlyTimer = setTimeout(() =>
+        setHealthLoading('Connecting to Lambda…'), 250);
+
+      const coldTimer = setTimeout(() =>
+        setHealthLoading('Still waiting — Lambda may be cold-starting. First request typically takes 10–15 s; warm requests return in ~120 ms.'), 5000);
 
       const t0 = performance.now();
       let res, json;
@@ -393,11 +401,15 @@
         res  = await fetch(`${getBase()}/health`);
         json = await res.json();
       } catch (e) {
-        clearTimeout(coldTimer);
+        clearTimeout(earlyTimer); clearTimeout(coldTimer);
         el.innerHTML = renderError(e);
         return;
       }
-      clearTimeout(coldTimer);
+      clearTimeout(earlyTimer); clearTimeout(coldTimer);
+
+      const loadEl = document.getElementById('health-loading');
+      if (loadEl) { loadEl.style.opacity = '0'; await new Promise(r => setTimeout(r, 220)); }
+
       const ms = Math.round(performance.now() - t0);
       el.innerHTML =
         metaBar(ms, res.status, res.ok ? 'backend is up' : 'backend error') +
