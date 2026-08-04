@@ -272,21 +272,21 @@
             </div>
           </div>
         </details>
-        <div class="flex flex-wrap items-end justify-between gap-3 pt-1">
-          <div class="flex items-end gap-3 flex-1 min-w-0">
-            <div class="flex-1 min-w-[180px]">
-              <label class="text-[10px] text-zinc-600 uppercase tracking-wider block mb-1">query</label>
-              <input type="text" id="retrieve-query" placeholder="How does the Fed control inflation?" />
-            </div>
-            <div style="width:56px">
-              <label class="text-[10px] text-zinc-600 uppercase tracking-wider block mb-1">k</label>
-              <input type="number" id="retrieve-k" value="5" min="1" max="20" style="width:56px" />
-            </div>
+        <div class="flex flex-wrap items-end gap-3 pt-1">
+          <div class="flex-1 min-w-[180px]">
+            <label class="text-[10px] text-zinc-600 uppercase tracking-wider block mb-1">query</label>
+            <input type="text" id="retrieve-query" placeholder="How does the Fed control inflation?" />
           </div>
-          <button class="run-btn" onclick="runRetrieve()">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M5 3l14 9-14 9V3z"/></svg>
-            Search
-          </button>
+          <div class="flex items-end gap-2">
+            <div>
+              <label class="text-[10px] text-zinc-600 uppercase tracking-wider block mb-1">k</label>
+              <input type="number" id="retrieve-k" value="5" min="1" max="20" style="width:52px" />
+            </div>
+            <button class="run-btn" onclick="runRetrieve()">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M5 3l14 9-14 9V3z"/></svg>
+              Search
+            </button>
+          </div>
         </div>
         <div id="result-retrieve" class="mt-3"></div>
       </div>
@@ -571,7 +571,6 @@
     // DELETE /api/reset
     async function runReset() {
       if (!requireBase('result-reset')) return;
-      if (!confirm('Clear the entire vector store? All ingested chunks will be deleted.')) return;
       setLoading('result-reset');
       const t0 = performance.now();
       let res, json;
