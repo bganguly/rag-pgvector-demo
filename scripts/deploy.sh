@@ -1,9 +1,14 @@
 #!/usr/bin/env bash
 # deploy.sh — rag-pgvector-demo: local dev or AWS Lambda+Neon+Vercel
-# Usage: ./scripts/deploy.sh
+# Usage: ./scripts/deploy.sh          — full deploy
+#        ./scripts/deploy.sh --smoke  — skip deploy, run smoke test only
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+if [[ "${1:-}" == "--smoke" ]]; then
+  exec bash "$ROOT/scripts/smoke-test.sh"
+fi
 
 _aws_tf_ws_count() {
   local ws="$1"
@@ -320,4 +325,10 @@ PORTFOLIO_SET_LIVE="$(cd "$ROOT/../../portfolio/scripts" 2>/dev/null && pwd || t
 if [[ -f "$PORTFOLIO_SET_LIVE" ]]; then
   printf '\n  Updating portfolio live-urls.js...\n'
   bash "$PORTFOLIO_SET_LIVE" --tier "lite" rag "$FRONTEND_URL" "${FRONTEND_URL}/api-explorer.html"
+fi
+
+printf '\nRun smoke test? [y/N]: '
+read -r _SMOKE
+if [[ "${_SMOKE:-n}" =~ ^[Yy] ]]; then
+  bash "$ROOT/scripts/smoke-test.sh" --backend-url "$BACKEND_URL" --frontend-url "$FRONTEND_URL"
 fi
