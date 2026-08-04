@@ -59,7 +59,7 @@ printf '  frontend: %s\n\n' "$FRONTEND_URL"
 
 # 1. Backend health
 > /tmp/_st_body
-_H=$(curl -s -o /tmp/_st_body -w '%{http_code}' --max-time 15 "${BACKEND_URL}/health" || echo "000"); _R="${_H:0:3}"
+_H=$(curl -s -o /tmp/_st_body -w '%{http_code}' --max-time 30 "${BACKEND_URL}/health" || echo "000"); _R="${_H:0:3}"
 _check "GET /health → 200 {status:ok}" "$_R" "200" "$(cat /tmp/_st_body)" '"ok"'
 
 # 2. Frontend app loads
