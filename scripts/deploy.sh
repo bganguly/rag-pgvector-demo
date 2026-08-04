@@ -1,14 +1,9 @@
 #!/usr/bin/env bash
 # deploy.sh — rag-pgvector-demo: local dev or AWS Lambda+Neon+Vercel
-# Usage: ./scripts/deploy.sh          — full deploy
-#        ./scripts/deploy.sh --smoke  — skip deploy, run smoke test only
+# Usage: ./scripts/deploy.sh
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-
-if [[ "${1:-}" == "--smoke" ]]; then
-  exec bash "$ROOT/scripts/smoke-test.sh"
-fi
 
 _aws_tf_ws_count() {
   local ws="$1"
@@ -19,14 +14,15 @@ _aws_tf_ws_count() {
 _aws_lite_count=$(_aws_tf_ws_count lite)
 
 printf '\n=== rag-pgvector-demo ===\n\n'
-printf '  [1] Local   — uvicorn + npm dev, no Docker (Postgres via .env)'
-printf '\n'
+printf '  [1] Local      — uvicorn + npm dev, no Docker (Postgres via .env)\n'
 printf '  [2] Serverless — AWS Lambda + Neon + Vercel  (~$0/mo)'
 (( _aws_lite_count > 0 )) && printf ' [%s resources active]' "$_aws_lite_count" || printf ' [not deployed]'
-printf '\n\nChoice [1/2, default=2]: '
+printf '\n  [3] Smoke test — verify live endpoints (no deploy)\n'
+printf '\nChoice [1/2/3, default=2]: '
 read -r _MODE
 _MODE="${_MODE:-2}"
 case "$_MODE" in
+  3) exec bash "$ROOT/scripts/smoke-test.sh" ;;
   2) TARGET="aws"; DEPLOY_WORKSPACE="lite"; TF_VAR_name_prefix="rag-lite"
      export DEPLOY_WORKSPACE TF_VAR_name_prefix
      ;;
