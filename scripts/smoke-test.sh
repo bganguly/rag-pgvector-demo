@@ -58,29 +58,33 @@ printf '  backend:  %s\n' "$BACKEND_URL"
 printf '  frontend: %s\n\n' "$FRONTEND_URL"
 
 # 1. Backend health
-_R=$(curl -s -o /tmp/_st_body -w '%{http_code}' --max-time 15 "${BACKEND_URL}/health" || echo "000")
+> /tmp/_st_body
+_H=$(curl -s -o /tmp/_st_body -w '%{http_code}' --max-time 15 "${BACKEND_URL}/health" || echo "000"); _R="${_H:0:3}"
 _check "GET /health → 200 {status:ok}" "$_R" "200" "$(cat /tmp/_st_body)" '"ok"'
 
 # 2. Frontend app loads
-_R=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "${FRONTEND_URL}/" || echo "000")
+_H=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "${FRONTEND_URL}/" || echo "000"); _R="${_H:0:3}"
 _check "GET / (frontend) → 200" "$_R" "200" ""
 
 # 3. API explorer page loads
-_R=$(curl -s -o /tmp/_st_body -w '%{http_code}' --max-time 15 "${FRONTEND_URL}/api-explorer.html" || echo "000")
+> /tmp/_st_body
+_H=$(curl -s -o /tmp/_st_body -w '%{http_code}' --max-time 15 "${FRONTEND_URL}/api-explorer.html" || echo "000"); _R="${_H:0:3}"
 _check "GET /api-explorer.html → 200" "$_R" "200" "$(cat /tmp/_st_body)" 'base-url-input'
 
 # 4. POST /api/ingest — smoke payload
-_R=$(curl -s -o /tmp/_st_body -w '%{http_code}' --max-time 30 \
+> /tmp/_st_body
+_H=$(curl -s -o /tmp/_st_body -w '%{http_code}' --max-time 30 \
   -X POST "${BACKEND_URL}/api/ingest" \
   -F "text=The Federal Reserve sets monetary policy to control inflation and employment." \
-  -F "source=smoke-test" || echo "000")
+  -F "source=smoke-test" || echo "000"); _R="${_H:0:3}"
 _check "POST /api/ingest → 200 chunks>0" "$_R" "200" "$(cat /tmp/_st_body)" '"chunks"'
 
 # 5. POST /api/retrieve — query against ingested text
-_R=$(curl -s -o /tmp/_st_body -w '%{http_code}' --max-time 30 \
+> /tmp/_st_body
+_H=$(curl -s -o /tmp/_st_body -w '%{http_code}' --max-time 30 \
   -X POST "${BACKEND_URL}/api/retrieve" \
   -H "Content-Type: application/json" \
-  -d '{"query":"Federal Reserve inflation","k":3}' || echo "000")
+  -d '{"query":"Federal Reserve inflation","k":3}' || echo "000"); _R="${_H:0:3}"
 _check "POST /api/retrieve → 200 chunks[]" "$_R" "200" "$(cat /tmp/_st_body)" '"chunks"'
 
 rm -f /tmp/_st_body
