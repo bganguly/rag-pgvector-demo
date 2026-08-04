@@ -120,10 +120,11 @@
         <span class="text-xs text-zinc-600">Backend base URL</span>
       </div>
       <input type="text" id="base-url-input"
+        value="https://9y3yanp443.execute-api.us-east-1.amazonaws.com"
         placeholder="http://localhost:8001"
         style="flex:1;min-width:260px;width:auto"
         oninput="onBaseUrlChange()" />
-      <span class="text-xs text-zinc-600" id="url-hint">run <code class="text-zinc-500">./scripts/deploy.sh</code> then paste the backend URL</span>
+      <span class="text-xs text-zinc-600" id="url-hint">override with <code class="text-zinc-500">http://localhost:8001</code> for local dev</span>
     </div>
   </section>
 
@@ -573,6 +574,8 @@
           ? `<div class="success-msg">✓ ${json.status} — collection dropped and recreated</div>`
           : `<div class="error-msg">${JSON.stringify(json)}</div>`);
     }
+
+    onBaseUrlChange();
 
     // Keyboard shortcuts
     document.getElementById('retrieve-query').addEventListener('keydown', e => {
