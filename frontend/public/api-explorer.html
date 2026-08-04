@@ -15,7 +15,7 @@
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
     body { background: #0f0f13; }
     .glass { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); }
-    .chip { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 9999px; font-size: 0.7rem; font-weight: 500; }
+    .chip { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 9999px; font-size: 0.7rem; font-weight: 500; }
     .method-get    { background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.3); color: #34d399; }
     .method-post   { background: rgba(139,92,246,0.12); border: 1px solid rgba(139,92,246,0.3); color: #c4b5fd; }
     .method-delete { background: rgba(239,68,68,0.12);  border: 1px solid rgba(239,68,68,0.3);  color: #f87171; }
@@ -25,13 +25,13 @@
       font-family: 'JetBrains Mono', monospace; outline: none; transition: border-color 0.15s;
       width: 100%;
     }
-    textarea { resize: vertical; min-height: 72px; }
+    textarea { resize: vertical; min-height: 64px; }
     input[type="text"]:focus, input[type="number"]:focus, textarea:focus { border-color: rgba(139,92,246,0.5); }
     .run-btn {
       display: inline-flex; align-items: center; gap: 6px;
-      padding: 6px 16px; border-radius: 8px; font-size: 0.75rem; font-weight: 600;
+      padding: 5px 14px; border-radius: 8px; font-size: 0.75rem; font-weight: 600;
       background: rgba(139,92,246,0.15); border: 1px solid rgba(139,92,246,0.4);
-      color: #c4b5fd; cursor: pointer; transition: all 0.15s; white-space: nowrap;
+      color: #c4b5fd; cursor: pointer; transition: all 0.15s; white-space: nowrap; flex-shrink: 0;
     }
     .run-btn:hover { background: rgba(139,92,246,0.25); }
     .run-btn:disabled { opacity: 0.4; cursor: not-allowed; }
@@ -42,35 +42,36 @@
     .timing-mid  { background: rgba(245,158,11,0.12); color: #fbbf24; border: 1px solid rgba(245,158,11,0.25); }
     .timing-slow { background: rgba(239,68,68,0.12);  color: #f87171; border: 1px solid rgba(239,68,68,0.25); }
     .result-table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
-    .result-table th { color: #71717a; font-weight: 500; text-align: left; padding: 6px 10px; border-bottom: 1px solid rgba(255,255,255,0.06); }
-    .result-table td { color: #d4d4d8; padding: 6px 10px; border-bottom: 1px solid rgba(255,255,255,0.04); vertical-align: top; }
+    .result-table th { color: #71717a; font-weight: 500; text-align: left; padding: 5px 10px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .result-table td { color: #d4d4d8; padding: 5px 10px; border-bottom: 1px solid rgba(255,255,255,0.04); vertical-align: top; }
     .result-table tr:last-child td { border-bottom: none; }
     .score-bar-wrap { display: flex; align-items: center; gap: 8px; }
     .score-bar { height: 4px; border-radius: 2px; background: rgba(139,92,246,0.6); min-width: 4px; }
-    .raw-json { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 12px; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: #71717a; max-height: 260px; overflow-y: auto; white-space: pre; }
-    .schema-block { background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 10px 14px; font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: #52525b; line-height: 1.8; }
+    .raw-json { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 10px 12px; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: #71717a; max-height: 220px; overflow-y: auto; white-space: pre; }
+    .schema-block { background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 8px 12px; font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: #52525b; line-height: 1.7; }
     .schema-block .k { color: #818cf8; }
     .schema-block .v { color: #71717a; }
     .schema-block .opt { color: #3f3f46; }
-    details summary { cursor: pointer; font-size: 0.7rem; color: #52525b; margin-top: 10px; user-select: none; list-style: none; display: flex; align-items: center; gap: 5px; }
+    details summary { cursor: pointer; font-size: 0.7rem; color: #52525b; margin-top: 8px; user-select: none; list-style: none; display: flex; align-items: center; gap: 5px; }
     details summary:hover { color: #a1a1aa; }
     details summary::before { content: '▶'; font-size: 0.55rem; transition: transform 0.15s; }
     details[open] summary::before { transform: rotate(90deg); }
     details[open] summary { color: #a1a1aa; }
-    .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(139,92,246,0.3); border-top-color: #a78bfa; border-radius: 50%; animation: spin 0.6s linear infinite; }
+    .spinner { display: inline-block; width: 13px; height: 13px; border: 2px solid rgba(139,92,246,0.3); border-top-color: #a78bfa; border-radius: 50%; animation: spin 0.6s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
-    .error-msg { color: #f87171; font-size: 0.75rem; background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2); border-radius: 8px; padding: 10px 14px; }
-    .success-msg { color: #34d399; font-size: 0.75rem; background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.2); border-radius: 8px; padding: 10px 14px; }
+    .error-msg { color: #f87171; font-size: 0.75rem; background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2); border-radius: 8px; padding: 8px 12px; }
+    .success-msg { color: #34d399; font-size: 0.75rem; background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.2); border-radius: 8px; padding: 8px 12px; }
     ::-webkit-scrollbar { width: 4px; height: 4px; }
     ::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
-    .flow-arrow { color: #3f3f46; margin: 0 6px; }
-    .flow-node { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 6px; font-size: 0.65rem; font-family: 'JetBrains Mono', monospace; }
+    .flow-arrow { color: #3f3f46; margin: 0 4px; }
+    .flow-node { display: inline-flex; align-items: center; padding: 2px 7px; border-radius: 6px; font-size: 0.62rem; font-family: 'JetBrains Mono', monospace; }
     .http-code-2 { color: #34d399; }
     .http-code-4 { color: #f87171; }
-    .file-drop { border: 1px dashed rgba(139,92,246,0.3); border-radius: 8px; padding: 14px; text-align: center; cursor: pointer; transition: border-color 0.15s; }
+    .file-drop { border: 1px dashed rgba(139,92,246,0.3); border-radius: 8px; padding: 10px; text-align: center; cursor: pointer; transition: border-color 0.15s; }
     .file-drop:hover, .file-drop.drag { border-color: rgba(139,92,246,0.6); background: rgba(139,92,246,0.04); }
-    .chunk-content { font-size: 0.72rem; color: #a1a1aa; line-height: 1.5; max-height: 80px; overflow: hidden; position: relative; }
-    .chunk-content::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 24px; background: linear-gradient(transparent, #0f0f13); }
+    .chunk-content { font-size: 0.72rem; color: #a1a1aa; line-height: 1.5; max-height: 72px; overflow: hidden; position: relative; }
+    .chunk-content::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 20px; background: linear-gradient(transparent, #0f0f13); }
+    .cold-note { color: #71717a; font-size: 0.7rem; margin-top: 6px; }
   </style>
 </head>
 <body class="text-zinc-100 font-sans antialiased min-h-screen">
@@ -90,16 +91,15 @@
   </nav>
 
   <!-- Hero -->
-  <section class="pt-28 pb-10 px-6 max-w-4xl mx-auto">
-    <p class="text-xs font-medium text-violet-400 tracking-widest uppercase mb-3">API Explorer</p>
-    <h1 class="text-2xl font-bold text-zinc-100 mb-2">Live API — RAG pgvector Demo</h1>
-    <p class="text-sm text-zinc-500 max-w-2xl mb-6">
-      Run real requests against the FastAPI backend. Ingest text into pgvector, retrieve semantically
-      similar chunks, and reset the knowledge base.
+  <section class="pt-24 pb-6 px-6 max-w-4xl mx-auto">
+    <p class="text-xs font-medium text-violet-400 tracking-widest uppercase mb-2">API Explorer</p>
+    <h1 class="text-2xl font-bold text-zinc-100 mb-1">Live API — RAG pgvector Demo</h1>
+    <p class="text-sm text-zinc-500 max-w-2xl mb-4">
+      Run real requests against the FastAPI backend. Ingest text into pgvector, retrieve semantically similar chunks, and reset the knowledge base.
     </p>
 
     <!-- Architecture flow -->
-    <div class="flex flex-wrap items-center gap-1 mb-6 text-[11px]">
+    <div class="flex flex-wrap items-center gap-1 mb-4 text-[11px]">
       <span class="flow-node" style="background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.2);color:#c4b5fd">POST /api/ingest</span>
       <span class="flow-arrow">→</span>
       <span class="flow-node" style="background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.2);color:#a5b4fc">LangChain splitter</span>
@@ -113,8 +113,8 @@
       <span class="flow-node" style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.2);color:#34d399">cosine top-k</span>
     </div>
 
-    <!-- Base URL input -->
-    <div class="glass rounded-xl px-4 py-3 flex flex-wrap items-center gap-3">
+    <!-- Base URL -->
+    <div class="glass rounded-xl px-4 py-2.5 flex flex-wrap items-center gap-3">
       <div class="flex items-center gap-2 flex-shrink-0">
         <span id="url-dot" class="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block"></span>
         <span class="text-xs text-zinc-600">Backend base URL</span>
@@ -122,203 +122,195 @@
       <input type="text" id="base-url-input"
         value="https://9y3yanp443.execute-api.us-east-1.amazonaws.com"
         placeholder="http://localhost:8001"
-        style="flex:1;min-width:260px;width:auto"
+        style="flex:1;min-width:240px;width:auto"
         oninput="onBaseUrlChange()" />
-      <span class="text-xs text-zinc-600" id="url-hint">override with <code class="text-zinc-500">http://localhost:8001</code> for local dev</span>
+      <span class="text-xs text-zinc-600 hidden sm:inline" id="url-hint">override with <code class="text-zinc-500">http://localhost:8001</code> for local dev</span>
     </div>
   </section>
 
   <!-- Endpoint cards -->
-  <section class="px-6 pb-24 max-w-4xl mx-auto space-y-5">
+  <section class="px-6 pb-24 max-w-4xl mx-auto space-y-3">
 
     <!-- GET /health -->
     <div class="glass rounded-2xl overflow-hidden">
-      <button class="w-full flex items-center justify-between gap-4 px-6 py-4 text-left" onclick="toggleCard('health')">
+      <button class="w-full flex items-center justify-between gap-4 px-6 py-3.5 text-left" onclick="toggleCard('health')">
         <div class="flex items-center gap-3">
-          <span class="chip method-get text-[11px] px-2 py-0.5">GET</span>
+          <span class="chip method-get">GET</span>
           <span class="endpoint-path">/health</span>
-          <span class="text-xs text-zinc-600 hidden sm:inline">Liveness check — confirms the Lambda/ECS container is up</span>
+          <span class="text-xs text-zinc-600 hidden sm:inline">Liveness check — confirms the Lambda container is up</span>
         </div>
         <svg id="chevron-health" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-zinc-600 flex-shrink-0 transition-transform duration-200"><path d="M6 9l6 6 6-6"/></svg>
       </button>
-      <div id="body-health" class="hidden px-6 pb-6 border-t" style="border-color:rgba(255,255,255,0.06)">
-        <div class="pt-4 mb-4">
-          <div class="schema-block">
+      <div id="body-health" class="hidden px-6 pb-5 border-t" style="border-color:rgba(255,255,255,0.06)">
+        <div class="pt-4 flex items-center justify-between gap-4">
+          <div class="schema-block text-[11px]">
             <span class="http-code-2">200</span> { <span class="k">"status"</span>: <span class="v">"ok"</span> }
           </div>
+          <button class="run-btn" onclick="runHealth()">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M5 3l14 9-14 9V3z"/></svg>
+            Ping
+          </button>
         </div>
-        <button class="run-btn" onclick="runHealth()">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M5 3l14 9-14 9V3z"/></svg>
-          Ping
-        </button>
-        <div id="result-health" class="mt-4"></div>
+        <div id="result-health" class="mt-3"></div>
       </div>
     </div>
 
     <!-- GET wikipedia.org/w/api.php -->
     <div class="glass rounded-2xl overflow-hidden">
-      <button class="w-full flex items-center justify-between gap-4 px-6 py-4 text-left" onclick="toggleCard('wiki')">
+      <button class="w-full flex items-center justify-between gap-4 px-6 py-3.5 text-left" onclick="toggleCard('wiki')">
         <div class="flex items-center gap-3">
-          <span class="chip method-get text-[11px] px-2 py-0.5">GET</span>
+          <span class="chip method-get">GET</span>
           <span class="endpoint-path">wikipedia.org/w/api.php</span>
-          <span class="text-xs text-zinc-600 hidden sm:inline">Fetch a Wikipedia article as plain text — the same call SeedPanel makes before ingesting</span>
+          <span class="text-xs text-zinc-600 hidden sm:inline">Fetch a Wikipedia article as plain text</span>
         </div>
         <svg id="chevron-wiki" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-zinc-600 flex-shrink-0 transition-transform duration-200"><path d="M6 9l6 6 6-6"/></svg>
       </button>
-      <div id="body-wiki" class="hidden px-6 pb-6 border-t" style="border-color:rgba(255,255,255,0.06)">
-        <div class="pt-4 mb-4">
-          <div class="schema-block">
-            action=query &amp; prop=extracts &amp; explaintext=true &amp; origin=*
-          </div>
-        </div>
-        <div class="flex flex-wrap items-end gap-3 mb-4">
-          <div class="flex-1 min-w-[200px]">
-            <label class="text-[10px] text-zinc-600 uppercase tracking-wider block mb-1.5">Wikipedia slug</label>
-            <input type="text" id="wiki-slug" value="Inflation" placeholder="e.g. Inflation" />
+      <div id="body-wiki" class="hidden px-6 pb-5 border-t" style="border-color:rgba(255,255,255,0.06)">
+        <div class="pt-4 flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-3 flex-1 min-w-0">
+            <label class="text-[10px] text-zinc-600 uppercase tracking-wider flex-shrink-0">slug</label>
+            <input type="text" id="wiki-slug" value="Inflation" placeholder="e.g. Inflation" style="width:200px;flex:none" />
+            <span class="text-[11px] font-mono text-zinc-600 hidden sm:inline">action=query · prop=extracts · explaintext</span>
           </div>
           <button class="run-btn" onclick="runWiki()">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M5 3l14 9-14 9V3z"/></svg>
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M5 3l14 9-14 9V3z"/></svg>
             Fetch
           </button>
         </div>
-        <div id="result-wiki"></div>
+        <div id="result-wiki" class="mt-3"></div>
       </div>
     </div>
 
     <!-- POST /api/ingest -->
     <div class="glass rounded-2xl overflow-hidden">
-      <button class="w-full flex items-center justify-between gap-4 px-6 py-4 text-left" onclick="toggleCard('ingest')">
+      <button class="w-full flex items-center justify-between gap-4 px-6 py-3.5 text-left" onclick="toggleCard('ingest')">
         <div class="flex items-center gap-3">
-          <span class="chip method-post text-[11px] px-2 py-0.5">POST</span>
+          <span class="chip method-post">POST</span>
           <span class="endpoint-path">/api/ingest</span>
           <span class="text-xs text-zinc-600 hidden sm:inline">Chunk, embed, and store text into pgvector</span>
         </div>
         <svg id="chevron-ingest" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-zinc-600 flex-shrink-0 transition-transform duration-200"><path d="M6 9l6 6 6-6"/></svg>
       </button>
-      <div id="body-ingest" class="hidden px-6 pb-6 border-t" style="border-color:rgba(255,255,255,0.06)">
-        <div class="pt-4 mb-5 grid sm:grid-cols-2 gap-4">
-          <div>
-            <p class="text-[10px] text-zinc-600 uppercase tracking-wider mb-2">Request — multipart/form-data</p>
-            <div class="schema-block">
-              <span class="k">text</span>: <span class="v">&lt;string&gt;</span> <span class="opt">(or)</span><br>
-              <span class="k">file</span>: <span class="v">&lt;.txt / .md&gt;</span><br>
-              <span class="opt k">source</span><span class="opt">?: &lt;string&gt; = "manual"</span>
+      <div id="body-ingest" class="hidden px-6 pb-5 border-t" style="border-color:rgba(255,255,255,0.06)">
+        <details class="mb-3">
+          <summary>Schema</summary>
+          <div class="mt-2 grid sm:grid-cols-2 gap-3">
+            <div>
+              <p class="text-[10px] text-zinc-600 uppercase tracking-wider mb-1.5">Request — multipart/form-data</p>
+              <div class="schema-block">
+                <span class="k">text</span>: <span class="v">&lt;string&gt;</span> <span class="opt">(or)</span><br>
+                <span class="k">file</span>: <span class="v">&lt;.txt / .md&gt;</span><br>
+                <span class="opt k">source</span><span class="opt">?: &lt;string&gt; = "manual"</span>
+              </div>
+            </div>
+            <div>
+              <p class="text-[10px] text-zinc-600 uppercase tracking-wider mb-1.5">Response</p>
+              <div class="schema-block">
+                <span class="http-code-2">200</span> { <span class="k">"source"</span>: <span class="v">&lt;string&gt;</span>, <span class="k">"chunks"</span>: <span class="v">&lt;number&gt;</span> }<br>
+                <span class="http-code-4">400</span> { <span class="k">"detail"</span>: <span class="v">&lt;string&gt;</span> }
+              </div>
             </div>
           </div>
+        </details>
+        <div class="space-y-2 pt-2">
           <div>
-            <p class="text-[10px] text-zinc-600 uppercase tracking-wider mb-2">Response</p>
-            <div class="schema-block">
-              <span class="http-code-2">200</span> {<br>
-              &nbsp;&nbsp;<span class="k">"source"</span>: <span class="v">&lt;string&gt;</span>,<br>
-              &nbsp;&nbsp;<span class="k">"chunks"</span>: <span class="v">&lt;number&gt;</span><br>
-              }<br>
-              <span class="http-code-4">400</span> { <span class="k">"detail"</span>: <span class="v">&lt;string&gt;</span> }
-            </div>
-          </div>
-        </div>
-        <div class="space-y-3 mb-4">
-          <div>
-            <label class="text-[10px] text-zinc-600 uppercase tracking-wider block mb-1.5">text</label>
+            <label class="text-[10px] text-zinc-600 uppercase tracking-wider block mb-1">text</label>
             <textarea id="ingest-text" placeholder="Paste any text to embed…"></textarea>
           </div>
-          <div>
-            <label class="text-[10px] text-zinc-600 uppercase tracking-wider block mb-1.5">source label</label>
-            <input type="text" id="ingest-source" placeholder="manual" style="width:200px" />
-          </div>
-          <div>
-            <label class="text-[10px] text-zinc-600 uppercase tracking-wider block mb-1.5">or upload a file</label>
-            <div class="file-drop" id="file-drop-zone" onclick="document.getElementById('ingest-file').click()"
-                 ondragover="event.preventDefault();this.classList.add('drag')"
-                 ondragleave="this.classList.remove('drag')"
-                 ondrop="handleFileDrop(event)">
-              <input type="file" id="ingest-file" accept=".txt,.md" class="hidden" onchange="handleFileSelect(event)" />
-              <p class="text-xs text-zinc-600" id="file-label">Click or drag a .txt / .md file</p>
+          <div class="flex flex-wrap items-end justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <div>
+                <label class="text-[10px] text-zinc-600 uppercase tracking-wider block mb-1">source</label>
+                <input type="text" id="ingest-source" placeholder="manual" style="width:160px" />
+              </div>
+              <div>
+                <label class="text-[10px] text-zinc-600 uppercase tracking-wider block mb-1">or file</label>
+                <div class="file-drop" id="file-drop-zone" onclick="document.getElementById('ingest-file').click()"
+                     ondragover="event.preventDefault();this.classList.add('drag')"
+                     ondragleave="this.classList.remove('drag')"
+                     ondrop="handleFileDrop(event)" style="padding:5px 10px">
+                  <input type="file" id="ingest-file" accept=".txt,.md" class="hidden" onchange="handleFileSelect(event)" />
+                  <p class="text-xs text-zinc-600" id="file-label">Click or drag .txt/.md</p>
+                </div>
+              </div>
             </div>
+            <button class="run-btn" onclick="runIngest()">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M5 3l14 9-14 9V3z"/></svg>
+              Ingest
+            </button>
           </div>
-          <button class="run-btn" onclick="runIngest()">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M5 3l14 9-14 9V3z"/></svg>
-            Ingest
-          </button>
         </div>
-        <div id="result-ingest"></div>
+        <div id="result-ingest" class="mt-3"></div>
       </div>
     </div>
 
     <!-- POST /api/retrieve -->
     <div class="glass rounded-2xl overflow-hidden">
-      <button class="w-full flex items-center justify-between gap-4 px-6 py-4 text-left" onclick="toggleCard('retrieve')">
+      <button class="w-full flex items-center justify-between gap-4 px-6 py-3.5 text-left" onclick="toggleCard('retrieve')">
         <div class="flex items-center gap-3">
-          <span class="chip method-post text-[11px] px-2 py-0.5">POST</span>
+          <span class="chip method-post">POST</span>
           <span class="endpoint-path">/api/retrieve</span>
           <span class="text-xs text-zinc-600 hidden sm:inline">Semantic similarity search — returns top-k chunks with cosine scores</span>
         </div>
         <svg id="chevron-retrieve" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-zinc-600 flex-shrink-0 transition-transform duration-200"><path d="M6 9l6 6 6-6"/></svg>
       </button>
-      <div id="body-retrieve" class="hidden px-6 pb-6 border-t" style="border-color:rgba(255,255,255,0.06)">
-        <div class="pt-4 mb-5 grid sm:grid-cols-2 gap-4">
-          <div>
-            <p class="text-[10px] text-zinc-600 uppercase tracking-wider mb-2">Request — application/json</p>
-            <div class="schema-block">
-              {<br>
-              &nbsp;&nbsp;<span class="k">"query"</span>: <span class="v">&lt;string&gt;</span>,<br>
-              &nbsp;&nbsp;<span class="opt k">"k"</span><span class="opt">?: &lt;number&gt; = 5</span><br>
-              }
+      <div id="body-retrieve" class="hidden px-6 pb-5 border-t" style="border-color:rgba(255,255,255,0.06)">
+        <details class="mb-3">
+          <summary>Schema</summary>
+          <div class="mt-2 grid sm:grid-cols-2 gap-3">
+            <div>
+              <p class="text-[10px] text-zinc-600 uppercase tracking-wider mb-1.5">Request — application/json</p>
+              <div class="schema-block">
+                { <span class="k">"query"</span>: <span class="v">&lt;string&gt;</span>, <span class="opt k">"k"</span><span class="opt">?: &lt;number&gt; = 5</span> }
+              </div>
+            </div>
+            <div>
+              <p class="text-[10px] text-zinc-600 uppercase tracking-wider mb-1.5">Response</p>
+              <div class="schema-block">
+                <span class="http-code-2">200</span> { <span class="k">"chunks"</span>: [{ <span class="k">"content"</span>, <span class="k">"source"</span>, <span class="k">"score"</span>: <span class="v">float</span> }] }
+              </div>
             </div>
           </div>
-          <div>
-            <p class="text-[10px] text-zinc-600 uppercase tracking-wider mb-2">Response</p>
-            <div class="schema-block">
-              <span class="http-code-2">200</span> {<br>
-              &nbsp;&nbsp;<span class="k">"query"</span>: <span class="v">&lt;string&gt;</span>,<br>
-              &nbsp;&nbsp;<span class="k">"chunks"</span>: [{<br>
-              &nbsp;&nbsp;&nbsp;&nbsp;<span class="k">"content"</span>: <span class="v">&lt;string&gt;</span>,<br>
-              &nbsp;&nbsp;&nbsp;&nbsp;<span class="k">"source"</span>: <span class="v">&lt;string&gt;</span>,<br>
-              &nbsp;&nbsp;&nbsp;&nbsp;<span class="k">"score"</span>: <span class="v">&lt;float 0–1&gt;</span><br>
-              &nbsp;&nbsp;}]<br>
-              }
+        </details>
+        <div class="flex flex-wrap items-end justify-between gap-3 pt-1">
+          <div class="flex items-end gap-3 flex-1 min-w-0">
+            <div class="flex-1 min-w-[180px]">
+              <label class="text-[10px] text-zinc-600 uppercase tracking-wider block mb-1">query</label>
+              <input type="text" id="retrieve-query" placeholder="How does the Fed control inflation?" />
             </div>
-          </div>
-        </div>
-        <div class="flex flex-wrap items-end gap-3 mb-4">
-          <div class="flex-1 min-w-[200px]">
-            <label class="text-[10px] text-zinc-600 uppercase tracking-wider block mb-1.5">query</label>
-            <input type="text" id="retrieve-query" placeholder="How does the Fed control inflation?" />
-          </div>
-          <div style="width:64px">
-            <label class="text-[10px] text-zinc-600 uppercase tracking-wider block mb-1.5">k</label>
-            <input type="number" id="retrieve-k" value="5" min="1" max="20" style="width:64px" />
+            <div style="width:56px">
+              <label class="text-[10px] text-zinc-600 uppercase tracking-wider block mb-1">k</label>
+              <input type="number" id="retrieve-k" value="5" min="1" max="20" style="width:56px" />
+            </div>
           </div>
           <button class="run-btn" onclick="runRetrieve()">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M5 3l14 9-14 9V3z"/></svg>
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M5 3l14 9-14 9V3z"/></svg>
             Search
           </button>
         </div>
-        <div id="result-retrieve"></div>
+        <div id="result-retrieve" class="mt-3"></div>
       </div>
     </div>
 
     <!-- DELETE /api/reset -->
     <div class="glass rounded-2xl overflow-hidden">
-      <button class="w-full flex items-center justify-between gap-4 px-6 py-4 text-left" onclick="toggleCard('reset')">
+      <button class="w-full flex items-center justify-between gap-4 px-6 py-3.5 text-left" onclick="toggleCard('reset')">
         <div class="flex items-center gap-3">
-          <span class="chip method-delete text-[11px] px-2 py-0.5">DELETE</span>
+          <span class="chip method-delete">DELETE</span>
           <span class="endpoint-path">/api/reset</span>
           <span class="text-xs text-zinc-600 hidden sm:inline">Wipe the vector store — drops and recreates the LangChain collection</span>
         </div>
         <svg id="chevron-reset" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-zinc-600 flex-shrink-0 transition-transform duration-200"><path d="M6 9l6 6 6-6"/></svg>
       </button>
-      <div id="body-reset" class="hidden px-6 pb-6 border-t" style="border-color:rgba(255,255,255,0.06)">
-        <div class="pt-4 mb-4">
-          <div class="schema-block">
-            <span class="http-code-2">200</span> { <span class="k">"status"</span>: <span class="v">"cleared"</span> }
-          </div>
-          <p class="text-xs text-zinc-600 mt-3">Deletes all chunks and embeddings. The collection is re-created immediately so the backend stays ready for new ingests.</p>
+      <div id="body-reset" class="hidden px-6 pb-5 border-t" style="border-color:rgba(255,255,255,0.06)">
+        <div class="pt-4 flex items-center justify-between gap-4">
+          <p class="text-xs text-zinc-600">Deletes all chunks and embeddings. Collection is re-created immediately.</p>
+          <button class="run-btn danger" onclick="runReset()">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+            Clear
+          </button>
         </div>
-        <button class="run-btn danger" onclick="runReset()">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
-          Clear vector store
-        </button>
-        <div id="result-reset" class="mt-4"></div>
+        <div id="result-reset" class="mt-3"></div>
       </div>
     </div>
 
@@ -344,8 +336,8 @@
     function metaBar(ms, status, label) {
       const cls = timingClass(ms);
       const sc  = status < 300 ? 'http-code-2' : 'http-code-4';
-      return `<div class="flex items-center gap-3 mb-4 flex-wrap">
-        <span class="chip ${cls} text-[11px] px-2 py-1">⚡ ${ms}ms</span>
+      return `<div class="flex items-center gap-3 mb-3 flex-wrap">
+        <span class="chip ${cls} text-[11px] px-2 py-0.5">⚡ ${ms}ms</span>
         <span class="font-mono text-[11px] ${sc}">${status}</span>
         <span class="text-xs text-zinc-500">${label}</span>
       </div>`;
@@ -355,9 +347,10 @@
       return `<details><summary>View raw JSON</summary><pre class="raw-json mt-2">${JSON.stringify(data, null, 2)}</pre></details>`;
     }
 
-    function setLoading(id) {
+    function setLoading(id, extra) {
       document.getElementById(id).innerHTML =
-        `<div class="flex items-center gap-2 text-xs text-zinc-600"><div class="spinner"></div> Sending…</div>`;
+        `<div class="flex items-center gap-2 text-xs text-zinc-600"><div class="spinner"></div> Sending…</div>`
+        + (extra ? `<p class="cold-note">${extra}</p>` : '');
     }
 
     function requireBase(id) {
@@ -382,21 +375,31 @@
       chevron.style.transform = isOpen ? '' : 'rotate(180deg)';
     }
 
-    // GET /health
+    // GET /health — with cold-start note after 5s
     async function runHealth() {
       if (!requireBase('result-health')) return;
       setLoading('result-health');
+      const el = document.getElementById('result-health');
+
+      const coldTimer = setTimeout(() => {
+        el.innerHTML =
+          `<div class="flex items-center gap-2 text-xs text-zinc-600"><div class="spinner"></div> Sending…</div>` +
+          `<p class="cold-note">Still waiting — Lambda may be cold-starting. First request typically takes 10–15 s; warm requests return in ~120 ms.</p>`;
+      }, 5000);
+
       const t0 = performance.now();
       let res, json;
       try {
         res  = await fetch(`${getBase()}/health`);
         json = await res.json();
       } catch (e) {
-        document.getElementById('result-health').innerHTML = renderError(e);
+        clearTimeout(coldTimer);
+        el.innerHTML = renderError(e);
         return;
       }
+      clearTimeout(coldTimer);
       const ms = Math.round(performance.now() - t0);
-      document.getElementById('result-health').innerHTML =
+      el.innerHTML =
         metaBar(ms, res.status, res.ok ? 'backend is up' : 'backend error') +
         (res.ok
           ? `<div class="success-msg">✓ ${json.status}</div>`
@@ -423,8 +426,8 @@
         return;
       }
       const ms = Math.round(performance.now() - t0);
-      const pages = data.query && data.query.pages;
-      const page  = pages && Object.values(pages)[0];
+      const pages   = data.query && data.query.pages;
+      const page    = pages && Object.values(pages)[0];
       const extract = page && page.extract;
       if (!extract) {
         document.getElementById('result-wiki').innerHTML =
@@ -445,7 +448,7 @@
     function handleFileSelect(e) {
       _ingestFile = e.target.files[0] || null;
       document.getElementById('file-label').textContent =
-        _ingestFile ? _ingestFile.name : 'Click or drag a .txt / .md file';
+        _ingestFile ? _ingestFile.name : 'Click or drag .txt/.md';
     }
 
     function handleFileDrop(e) {
@@ -453,7 +456,7 @@
       document.getElementById('file-drop-zone').classList.remove('drag');
       _ingestFile = e.dataTransfer.files[0] || null;
       document.getElementById('file-label').textContent =
-        _ingestFile ? _ingestFile.name : 'Click or drag a .txt / .md file';
+        _ingestFile ? _ingestFile.name : 'Click or drag .txt/.md';
     }
 
     async function runIngest() {
@@ -531,8 +534,8 @@
       const rows = chunks.map((c, i) => {
         const pct = Math.round(c.score * 100);
         return `<tr>
-          <td class="text-zinc-500 pr-2 text-[11px] font-mono align-top pt-2">${i + 1}</td>
-          <td class="align-top pt-2">
+          <td class="text-zinc-500 pr-2 text-[11px] font-mono align-top pt-1.5">${i + 1}</td>
+          <td class="align-top pt-1.5">
             <div class="score-bar-wrap mb-1">
               <div class="score-bar" style="width:${Math.max(pct, 4)}px"></div>
               <span class="text-[11px] font-mono text-violet-400">${c.score.toFixed(4)}</span>
@@ -577,7 +580,6 @@
 
     onBaseUrlChange();
 
-    // Keyboard shortcuts
     document.getElementById('retrieve-query').addEventListener('keydown', e => {
       if (e.key === 'Enter') runRetrieve();
     });
