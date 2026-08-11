@@ -317,11 +317,6 @@ printf '  API:      %s\n' "$BACKEND_URL"
 printf '  Cost:     ~$0/mo  (Lambda + Neon + Vercel free tiers)\n'
 printf '  Tear down: ./scripts/infra-down.sh --aws\n'
 
-PORTFOLIO_SET_LIVE="$(cd "$ROOT/../../portfolio/scripts" 2>/dev/null && pwd || true)/set-live-url.sh"
-if [[ -f "$PORTFOLIO_SET_LIVE" ]]; then
-  printf '\n  Updating portfolio live-urls.js...\n'
-  bash "$PORTFOLIO_SET_LIVE" --tier "lite" rag "$FRONTEND_URL" "${FRONTEND_URL}/api-explorer.html"
-fi
 
 printf '\nRun smoke test? [y/N]: '
 read -r _SMOKE
