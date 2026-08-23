@@ -4,6 +4,7 @@ import { useState } from "react";
 import ChatPanel from "@/components/ChatPanel";
 import SeedPanel from "@/components/SeedPanel";
 import UploadPanel from "@/components/UploadPanel";
+import BackToPortfolio from "@/components/BackToPortfolio";
 
 export type Provider = "anthropic" | "openai" | "nim";
 
@@ -25,6 +26,7 @@ export default function Home() {
         style={{ background: "var(--surface)", borderColor: "var(--border)" }}
       >
         <div className="min-w-0">
+          <BackToPortfolio />
           <span
             className="text-xs font-mono tracking-widest uppercase"
             style={{ color: "var(--accent)" }}
