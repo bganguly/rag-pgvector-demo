@@ -12,6 +12,10 @@ const openai = createOpenAI({
 });
 
 const NIM_MODEL = "nvidia/llama-3.1-nemotron-70b-instruct";
+const NIM_DIAGNOSTIC_MODELS = [
+  "meta/llama-3.1-8b-instruct",
+  "meta/llama-3.1-70b-instruct",
+];
 
 function pickModel(provider: string) {
   switch (provider) {
@@ -42,8 +46,8 @@ function logErr(tag: string, error: unknown) {
 
 async function nimPreflight(): Promise<void> {
   const key = process.env.NVIDIA_API_KEY ?? "";
-  const keyInfo = key ? `len=${key.length} suffix=...${key.slice(-4)}` : "(empty)";
-  console.log(`[nim-preflight] key ${keyInfo}`);
+  const keyInfo = key ? `len=${key.length} prefix=${key.slice(0, 8)}... suffix=...${key.slice(-6)}` : "(EMPTY — env var not set)";
+  console.log(`[nim-preflight] NVIDIA_API_KEY: ${keyInfo}`);
 
   try {
     const modelsRes = await fetch("https://integrate.api.nvidia.com/v1/models", {
@@ -52,31 +56,48 @@ async function nimPreflight(): Promise<void> {
     });
     const modelsBody = await modelsRes.text();
     console.log(`[nim-preflight] /v1/models status=${modelsRes.status}`);
-    console.log(`[nim-preflight] /v1/models body(first 500)=${modelsBody.slice(0, 500)}`);
+    try {
+      const parsed = JSON.parse(modelsBody);
+      const ids = (parsed.data || []).map((m: {id: string}) => m.id).filter((id: string) => !id.includes("embed") && !id.includes("rerank"));
+      console.log(`[nim-preflight] /v1/models chat-capable count=${ids.length}`);
+      const hasNemotron = ids.includes(NIM_MODEL);
+      console.log(`[nim-preflight] /v1/models has-nemotron=${hasNemotron}`);
+      if (!hasNemotron) {
+        console.warn(`[nim-preflight] WARNING: ${NIM_MODEL} not in catalog — key may lack access`);
+        console.log(`[nim-preflight] /v1/models all-ids=${ids.join(", ")}`);
+      }
+    } catch {
+      console.log(`[nim-preflight] /v1/models raw=${modelsBody.slice(0, 500)}`);
+    }
   } catch (e) {
     console.error(`[nim-preflight] /v1/models fetch error=${e}`);
   }
 
-  try {
-    const chatRes = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${key}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: NIM_MODEL,
-        messages: [{ role: "user", content: "hi" }],
-        max_tokens: 1,
-        stream: false,
-      }),
-      signal: AbortSignal.timeout(10000),
-    });
-    const chatBody = await chatRes.text();
-    console.log(`[nim-preflight] /v1/chat/completions status=${chatRes.status}`);
-    console.log(`[nim-preflight] /v1/chat/completions body=${chatBody.slice(0, 800)}`);
-  } catch (e) {
-    console.error(`[nim-preflight] /v1/chat/completions fetch error=${e}`);
+  const allModels = [NIM_MODEL, ...NIM_DIAGNOSTIC_MODELS];
+  for (const model of allModels) {
+    const tag = model === NIM_MODEL ? "[primary]" : "[diagnostic-only]";
+    try {
+      console.log(`[nim-preflight] ${tag} testing model=${model}`);
+      const chatRes = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${key}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model,
+          messages: [{ role: "user", content: "hi" }],
+          max_tokens: 1,
+          stream: false,
+        }),
+        signal: AbortSignal.timeout(12000),
+      });
+      const chatBody = await chatRes.text();
+      console.log(`[nim-preflight] ${tag} model=${model} status=${chatRes.status}`);
+      console.log(`[nim-preflight] ${tag} model=${model} body=${chatBody.slice(0, 600)}`);
+    } catch (e) {
+      console.error(`[nim-preflight] ${tag} model=${model} fetch error=${e}`);
+    }
   }
 }
 
@@ -92,7 +113,7 @@ export async function POST(req: Request) {
   }
 
   if (provider === "nim") {
-    console.log(`[chat] nim model=${NIM_MODEL}`);
+    console.log(`[chat] nim starting preflight, model=${NIM_MODEL}`);
     await nimPreflight();
   }
 
@@ -139,7 +160,7 @@ Begin your response with exactly this line: "**Generic LLM response** (not from 
 Then answer the question from your general knowledge.`;
 
   try {
-    console.log(`[chat] calling streamText provider=${provider}`);
+    console.log(`[chat] calling streamText provider=${provider} model=${provider === "nim" ? NIM_MODEL : "default"}`);
     const result = streamText({
       model: pickModel(provider),
       system,
