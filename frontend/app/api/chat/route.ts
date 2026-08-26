@@ -13,8 +13,9 @@ const openai = createOpenAI({
 
 const NIM_MODEL = "nvidia/llama-3.1-nemotron-70b-instruct";
 const NIM_DIAGNOSTIC_MODELS = [
-  "meta/llama-3.1-8b-instruct",
-  "meta/llama-3.1-70b-instruct",
+  "nvidia/llama-3.1-nemotron-nano-8b-v1",
+  "nvidia/llama-3.3-nemotron-super-49b-v1",
+  "mistralai/mistral-7b-instruct-v0.3",
 ];
 
 function pickModel(provider: string) {
@@ -59,13 +60,8 @@ async function nimPreflight(): Promise<void> {
     try {
       const parsed = JSON.parse(modelsBody);
       const ids = (parsed.data || []).map((m: {id: string}) => m.id).filter((id: string) => !id.includes("embed") && !id.includes("rerank"));
-      console.log(`[nim-preflight] /v1/models chat-capable count=${ids.length}`);
       const hasNemotron = ids.includes(NIM_MODEL);
-      console.log(`[nim-preflight] /v1/models has-nemotron=${hasNemotron}`);
-      if (!hasNemotron) {
-        console.warn(`[nim-preflight] WARNING: ${NIM_MODEL} not in catalog — key may lack access`);
-        console.log(`[nim-preflight] /v1/models all-ids=${ids.join(", ")}`);
-      }
+      console.log(`[nim-preflight] /v1/models count=${ids.length} has-nemotron=${hasNemotron} all=${ids.join("|")}`);
     } catch {
       console.log(`[nim-preflight] /v1/models raw=${modelsBody.slice(0, 500)}`);
     }
@@ -93,8 +89,7 @@ async function nimPreflight(): Promise<void> {
         signal: AbortSignal.timeout(12000),
       });
       const chatBody = await chatRes.text();
-      console.log(`[nim-preflight] ${tag} model=${model} status=${chatRes.status}`);
-      console.log(`[nim-preflight] ${tag} model=${model} body=${chatBody.slice(0, 600)}`);
+      console.log(`[nim-preflight] ${tag} model=${model} status=${chatRes.status} body=${chatBody.slice(0, 400)}`);
     } catch (e) {
       console.error(`[nim-preflight] ${tag} model=${model} fetch error=${e}`);
     }
