@@ -83,8 +83,8 @@ case "$_MODE" in
   *) TARGET="local" ;;
 esac
 
-# ── API key quick-update (only for modes that deploy something) ───────────────
-if [[ "$TARGET" != "frontend-only" ]]; then
+# ── API key quick-update (all deploy modes) ──────────────────────────────────
+if [[ "$TARGET" != "local" && "$TARGET" != "smoke" ]]; then
   printf '\nAPI keys (Enter to skip each):\n'
   for _K in OPENAI_API_KEY ANTHROPIC_API_KEY NVIDIA_API_KEY; do
     _CUR=$(_env_val "$_K")
