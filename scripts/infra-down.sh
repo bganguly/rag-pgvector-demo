@@ -87,7 +87,6 @@ GROUPS = [
   ('iam',   ['aws_iam_role','aws_iam_role_policy','aws_iam_role_policy_attachment']),
   ('cb',    ['aws_codebuild_project']),
   ('s3',    ['aws_s3_bucket','aws_s3_bucket_lifecycle_configuration']),
-  ('sched', ['aws_scheduler_schedule']),
   ('logs',  ['aws_cloudwatch_log_group']),
 ]
 try:
@@ -132,7 +131,6 @@ GROUPS = [
   ('iam',   ['aws_iam_role','aws_iam_role_policy','aws_iam_role_policy_attachment']),
   ('cb',    ['aws_codebuild_project']),
   ('s3',    ['aws_s3_bucket','aws_s3_bucket_lifecycle_configuration']),
-  ('sched', ['aws_scheduler_schedule']),
   ('logs',  ['aws_cloudwatch_log_group']),
 ]
 try: d = json.load(open(state_path))
