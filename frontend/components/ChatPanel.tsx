@@ -204,11 +204,18 @@ export default function ChatPanel({ provider, ingested }: { provider: Provider; 
               className="rounded-lg px-4 py-2.5 text-sm max-w-[80%]"
               style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.3)", color: "#ef4444" }}
             >
-              {apiErrorMsg
-                ? `${provider === "nim" ? "NVIDIA NIM" : provider === "openai" ? "OpenAI" : "Anthropic"} error — ${apiErrorMsg}`
-                : provider === "nim"
+              {(() => {
+                const label = provider === "nim" ? "NVIDIA NIM" : provider === "openai" ? "OpenAI" : "Anthropic";
+                if (apiErrorMsg) {
+                  const isRateLimit = /429|rate.?limit|too many/i.test(apiErrorMsg);
+                  return isRateLimit
+                    ? `${label} rate limit hit — wait ~60 s and try again (free-tier NIM has low RPM).`
+                    : `${label} error — ${apiErrorMsg}`;
+                }
+                return provider === "nim"
                   ? "NVIDIA NIM error — check your API key and quota at build.nvidia.com."
-                  : "An error occurred. Check your API key and try again."}
+                  : "An error occurred. Check your API key and try again.";
+              })()}
             </div>
           </div>
         )}
