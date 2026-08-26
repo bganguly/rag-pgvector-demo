@@ -15,7 +15,7 @@ _aws_lite_count=$(_aws_tf_ws_count lite)
 
 printf '\n=== rag-pgvector-demo ===\n\n'
 
-# ── API key quick-update (runs before mode selection) ─────────────────────────
+# ── helpers ───────────────────────────────────────────────────────────────────
 _env_val()  { grep "^${1}=" "$ROOT/.env" 2>/dev/null | cut -d= -f2-; }
 _env_mask() { local v="$1"; [[ -z "$v" ]] && echo "(not set)" || echo "${v:0:8}...${v: -4}"; }
 _env_write() {
@@ -33,30 +33,12 @@ _vercel_set_env() {
   printf '%s' "$v" | vercel env add "$k" production --force 2>/dev/null || true
 }
 
-printf 'API keys (Enter to skip each):\n'
-for _K in OPENAI_API_KEY ANTHROPIC_API_KEY NVIDIA_API_KEY; do
-  _CUR=$(_env_val "$_K")
-  printf '  %-24s  %s  — update? [y/N]: ' "$_K" "$(_env_mask "$_CUR")"
-  read -r _ANS
-  if [[ "${_ANS:-n}" =~ ^[Yy] ]]; then
-    printf '  New value: '; read -rs _NEW; printf '\n'
-    if [[ -n "$_NEW" ]]; then
-      _env_write "$_K" "$_NEW"
-      _vercel_set_env "$_K" "$_NEW"
-      printf '  ✓ %s updated (.env + Vercel)\n' "$_K"
-    else
-      printf '  (no change)\n'
-    fi
-  fi
-done
-printf '\n'
-# ─────────────────────────────────────────────────────────────────────────────
-
+# ── smart default: inspect last commit delta ──────────────────────────────────
 _changed_files=$(git -C "$ROOT" diff HEAD~1 HEAD --name-only 2>/dev/null)
 _has_frontend=0; _has_backend=0
 while IFS= read -r _f; do
   [[ "$_f" == frontend/* ]] && _has_frontend=1
-  [[ "$_f" == backend/* || "$_f" == infra/* || "$_f" == scripts/deploy.sh || "$_f" == scripts/infra* ]] && _has_backend=1
+  [[ "$_f" == backend/* || "$_f" == infra/* ]] && _has_backend=1
 done <<< "$_changed_files"
 if (( _has_frontend && ! _has_backend )); then
   _SMART_DEFAULT=4; _SMART_REASON="last commit touched only frontend/"
@@ -64,6 +46,7 @@ else
   _SMART_DEFAULT=2; _SMART_REASON="last commit included backend/infra changes"
 fi
 
+# ── mode selection ────────────────────────────────────────────────────────────
 printf '  [1] Local      — uvicorn + npm dev, no Docker (Postgres via .env)\n'
 printf '  [2] Serverless — AWS Lambda + Neon + Vercel  (~$0/mo)'
 (( _aws_lite_count > 0 )) && printf ' [%s resources active]' "$_aws_lite_count" || printf ' [not deployed]'
@@ -81,6 +64,27 @@ case "$_MODE" in
      ;;
   *) TARGET="local" ;;
 esac
+
+# ── API key quick-update (only for modes that deploy something) ───────────────
+if [[ "$TARGET" != "frontend-only" ]]; then
+  printf '\nAPI keys (Enter to skip each):\n'
+  for _K in OPENAI_API_KEY ANTHROPIC_API_KEY NVIDIA_API_KEY; do
+    _CUR=$(_env_val "$_K")
+    printf '  %-24s  %s  — update? [y/N]: ' "$_K" "$(_env_mask "$_CUR")"
+    read -r _ANS
+    if [[ "${_ANS:-n}" =~ ^[Yy] ]]; then
+      printf '  New value: '; read -rs _NEW; printf '\n'
+      if [[ -n "$_NEW" ]]; then
+        _env_write "$_K" "$_NEW"
+        _vercel_set_env "$_K" "$_NEW"
+        printf '  ✓ %s updated (.env + Vercel)\n' "$_K"
+      else
+        printf '  (no change)\n'
+      fi
+    fi
+  done
+  printf '\n'
+fi
 
 # ── frontend-only mode ────────────────────────────────────────────────────────
 if [[ "$TARGET" == "frontend-only" ]]; then
