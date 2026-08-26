@@ -24,6 +24,11 @@ function pickModel(provider: string) {
 
 export async function POST(req: Request) {
   const { messages, provider = "anthropic" } = await req.json();
+
+  if (provider === "nim" && !process.env.NVIDIA_API_KEY) {
+    return Response.json({ error: "NVIDIA_API_KEY is not configured on the server." }, { status: 502 });
+  }
+
   const query = messages.at(-1)?.content ?? "";
 
   const backendUrl = process.env.BACKEND_URL ?? "http://localhost:8001";
@@ -66,9 +71,16 @@ Then answer the question from your general knowledge.`;
       system,
       messages,
     });
-    return result.toDataStreamResponse();
+    return result.toDataStreamResponse({
+      getErrorMessage: (error) => {
+        const msg = error instanceof Error ? error.message : String(error);
+        console.error(`[chat/${provider}] stream error:`, error);
+        return msg;
+      },
+    });
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : String(e);
+    console.error(`[chat/${provider}] sync error:`, e);
     return Response.json({ error: msg }, { status: 502 });
   }
 }
