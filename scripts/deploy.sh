@@ -52,14 +52,27 @@ done
 printf '\n'
 # ─────────────────────────────────────────────────────────────────────────────
 
+_changed_files=$(git -C "$ROOT" diff HEAD~1 HEAD --name-only 2>/dev/null)
+_has_frontend=0; _has_backend=0
+while IFS= read -r _f; do
+  [[ "$_f" == frontend/* ]] && _has_frontend=1
+  [[ "$_f" == backend/* || "$_f" == infra/* || "$_f" == scripts/deploy.sh || "$_f" == scripts/infra* ]] && _has_backend=1
+done <<< "$_changed_files"
+if (( _has_frontend && ! _has_backend )); then
+  _SMART_DEFAULT=4; _SMART_REASON="last commit touched only frontend/"
+else
+  _SMART_DEFAULT=2; _SMART_REASON="last commit included backend/infra changes"
+fi
+
 printf '  [1] Local      — uvicorn + npm dev, no Docker (Postgres via .env)\n'
 printf '  [2] Serverless — AWS Lambda + Neon + Vercel  (~$0/mo)'
 (( _aws_lite_count > 0 )) && printf ' [%s resources active]' "$_aws_lite_count" || printf ' [not deployed]'
 printf '\n  [3] Smoke test — verify live endpoints (no deploy)\n'
 printf '  [4] Frontend   — redeploy Vercel frontend only (skip AWS/Lambda)\n'
-printf '\nChoice [1/2/3/4, default=2]: '
+printf '\nSuggested default: [%s]  (%s)\n' "$_SMART_DEFAULT" "$_SMART_REASON"
+printf 'Choice [1/2/3/4, default=%s]: ' "$_SMART_DEFAULT"
 read -r _MODE
-_MODE="${_MODE:-2}"
+_MODE="${_MODE:-$_SMART_DEFAULT}"
 case "$_MODE" in
   3) exec bash "$ROOT/scripts/smoke-test.sh" ;;
   4) TARGET="frontend-only" ;;
