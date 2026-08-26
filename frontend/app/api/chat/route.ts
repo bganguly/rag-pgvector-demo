@@ -14,7 +14,7 @@ const openai = createOpenAI({
 function pickModel(provider: string) {
   switch (provider) {
     case "nim":
-      return nim("meta/llama-3.1-8b-instruct");
+      return nim("nvidia/llama-3.3-nemotron-super-49b-v1");
     case "openai":
       return openai("gpt-4o-mini");
     default:
