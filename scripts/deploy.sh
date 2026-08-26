@@ -40,6 +40,21 @@ while IFS= read -r _f; do
   [[ "$_f" == frontend/* ]] && _has_frontend=1
   [[ "$_f" == backend/* || "$_f" == infra/* ]] && _has_backend=1
 done <<< "$_changed_files"
+
+if (( ! _has_frontend && ! _has_backend )); then
+  printf 'Nothing deployable changed in the last commit.\n'
+  if [[ -n "$_changed_files" ]]; then
+    printf 'Changed files:\n'
+    printf '  %s\n' $_changed_files
+  else
+    printf '  (no diff vs HEAD~1 — possibly first commit or already up to date)\n'
+  fi
+  printf '\nContinue anyway? [y/N]: '
+  read -r _CONT
+  [[ "${_CONT:-n}" =~ ^[Yy] ]] || { printf 'Exiting.\n'; exit 0; }
+  printf '\n'
+fi
+
 if (( _has_frontend && ! _has_backend )); then
   _SMART_DEFAULT=4; _SMART_REASON="last commit touched only frontend/"
 else
