@@ -26,12 +26,26 @@ export default function ChatPanel({ provider, ingested }: { provider: Provider; 
       api: "/api/chat",
       body: { provider },
       onError: async (err) => {
-        const raw = (err as { responseBody?: string }).responseBody;
+        console.error("[chat/onError] err.message:", err.message);
+        const anyErr = err as Record<string, unknown>;
+        console.error("[chat/onError] err.keys:", Object.keys(anyErr));
+        console.error("[chat/onError] responseBody:", anyErr.responseBody);
+        console.error("[chat/onError] status:", anyErr.status ?? anyErr.statusCode);
+        console.error("[chat/onError] cause:", anyErr.cause);
+        try {
+          console.error("[chat/onError] JSON:", JSON.stringify(err, Object.getOwnPropertyNames(err)));
+        } catch { console.error("[chat/onError] JSON: (unstringifiable)"); }
+
+        const raw = anyErr.responseBody as string | undefined;
         if (raw) {
+          console.error("[chat/onError] raw responseBody:", raw);
           try {
             const parsed = JSON.parse(raw);
+            console.error("[chat/onError] parsed responseBody:", parsed);
             if (parsed.error) { setApiErrorMsg(parsed.error); return; }
-          } catch {}
+          } catch (pe) {
+            console.error("[chat/onError] JSON.parse error:", pe);
+          }
         }
         setApiErrorMsg(err.message ?? null);
       },
