@@ -14,6 +14,44 @@ _aws_tf_ws_count() {
 _aws_lite_count=$(_aws_tf_ws_count lite)
 
 printf '\n=== rag-pgvector-demo ===\n\n'
+
+# ── API key quick-update (runs before mode selection) ─────────────────────────
+_env_val()  { grep "^${1}=" "$ROOT/.env" 2>/dev/null | cut -d= -f2-; }
+_env_mask() { local v="$1"; [[ -z "$v" ]] && echo "(not set)" || echo "${v:0:8}...${v: -4}"; }
+_env_write() {
+  local k="$1" v="$2"
+  if grep -q "^${k}=" "$ROOT/.env" 2>/dev/null; then
+    sed -i '' "s|^${k}=.*|${k}=${v}|" "$ROOT/.env"
+  else
+    printf '%s=%s\n' "$k" "$v" >> "$ROOT/.env"
+  fi
+}
+_vercel_set_env() {
+  local k="$1" v="$2"
+  command -v vercel >/dev/null 2>&1 || return
+  printf '%s' "$v" | vercel env add "$k" production --yes 2>/dev/null || \
+  printf '%s' "$v" | vercel env add "$k" production --force 2>/dev/null || true
+}
+
+printf 'API keys (Enter to skip each):\n'
+for _K in OPENAI_API_KEY ANTHROPIC_API_KEY NVIDIA_API_KEY; do
+  _CUR=$(_env_val "$_K")
+  printf '  %-24s  %s  — update? [y/N]: ' "$_K" "$(_env_mask "$_CUR")"
+  read -r _ANS
+  if [[ "${_ANS:-n}" =~ ^[Yy] ]]; then
+    printf '  New value: '; read -rs _NEW; printf '\n'
+    if [[ -n "$_NEW" ]]; then
+      _env_write "$_K" "$_NEW"
+      _vercel_set_env "$_K" "$_NEW"
+      printf '  ✓ %s updated (.env + Vercel)\n' "$_K"
+    else
+      printf '  (no change)\n'
+    fi
+  fi
+done
+printf '\n'
+# ─────────────────────────────────────────────────────────────────────────────
+
 printf '  [1] Local      — uvicorn + npm dev, no Docker (Postgres via .env)\n'
 printf '  [2] Serverless — AWS Lambda + Neon + Vercel  (~$0/mo)'
 (( _aws_lite_count > 0 )) && printf ' [%s resources active]' "$_aws_lite_count" || printf ' [not deployed]'
