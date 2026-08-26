@@ -33,27 +33,30 @@ _vercel_set_env() {
   printf '%s' "$v" | vercel env add "$k" production --force 2>/dev/null || true
 }
 
-# ── smart default: inspect last commit delta ──────────────────────────────────
-_changed_files=$(git -C "$ROOT" diff HEAD~1 HEAD --name-only 2>/dev/null)
+# ── no-change guard: exit early if HEAD already deployed ─────────────────────
+_SHA_FILE="$ROOT/.last-deployed-sha"
+_CURRENT_SHA=$(git -C "$ROOT" rev-parse HEAD 2>/dev/null)
+_LAST_SHA=$(cat "$_SHA_FILE" 2>/dev/null || echo "")
+if [[ -n "$_LAST_SHA" && "$_CURRENT_SHA" == "$_LAST_SHA" ]]; then
+  printf 'Already deployed: HEAD is %s (no new commits since last deploy).\n' "${_CURRENT_SHA:0:7}"
+  printf 'Continue anyway to force a redeploy? [y/N]: '
+  read -r _CONT
+  [[ "${_CONT:-n}" =~ ^[Yy] ]] || { printf 'Exiting.\n'; exit 0; }
+  printf '\n'
+fi
+
+# ── smart default: inspect delta since last deploy (or HEAD~1 fallback) ───────
+_BASE_SHA="${_LAST_SHA:-}"
+if [[ -n "$_BASE_SHA" && "$_BASE_SHA" != "$_CURRENT_SHA" ]]; then
+  _changed_files=$(git -C "$ROOT" diff "${_BASE_SHA}" HEAD --name-only 2>/dev/null)
+else
+  _changed_files=$(git -C "$ROOT" diff HEAD~1 HEAD --name-only 2>/dev/null)
+fi
 _has_frontend=0; _has_backend=0
 while IFS= read -r _f; do
   [[ "$_f" == frontend/* ]] && _has_frontend=1
   [[ "$_f" == backend/* || "$_f" == infra/* ]] && _has_backend=1
 done <<< "$_changed_files"
-
-if (( ! _has_frontend && ! _has_backend )); then
-  printf 'Nothing deployable changed in the last commit.\n'
-  if [[ -n "$_changed_files" ]]; then
-    printf 'Changed files:\n'
-    printf '  %s\n' $_changed_files
-  else
-    printf '  (no diff vs HEAD~1 — possibly first commit or already up to date)\n'
-  fi
-  printf '\nContinue anyway? [y/N]: '
-  read -r _CONT
-  [[ "${_CONT:-n}" =~ ^[Yy] ]] || { printf 'Exiting.\n'; exit 0; }
-  printf '\n'
-fi
 
 if (( _has_frontend && ! _has_backend )); then
   _SMART_DEFAULT=4; _SMART_REASON="last commit touched only frontend/"
@@ -116,6 +119,7 @@ if [[ "$TARGET" == "frontend-only" ]]; then
   done
   printf '  Deploying frontend to Vercel...\n'
   vercel --prod --yes
+  printf '%s' "$_CURRENT_SHA" > "$_SHA_FILE"
   exit 0
 fi
 
@@ -400,6 +404,8 @@ sed -i '' "s|\[Live demo →\]([^)]*)|[Live demo →](${FRONTEND_URL})|" "$ROOT/
 git -C "$ROOT" add README.md
 git -C "$ROOT" commit -m "chore: update live demo URL after frontend redeploy" >/dev/null 2>&1 || true
 git -C "$ROOT" push >/dev/null 2>&1 || true
+
+printf '%s' "$_CURRENT_SHA" > "$_SHA_FILE"
 
 printf '\n✓ RAG + pgvector Demo live (serverless)\n'
 printf '  App:      %s\n' "$FRONTEND_URL"
