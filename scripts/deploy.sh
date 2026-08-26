@@ -56,16 +56,36 @@ printf '  [1] Local      — uvicorn + npm dev, no Docker (Postgres via .env)\n'
 printf '  [2] Serverless — AWS Lambda + Neon + Vercel  (~$0/mo)'
 (( _aws_lite_count > 0 )) && printf ' [%s resources active]' "$_aws_lite_count" || printf ' [not deployed]'
 printf '\n  [3] Smoke test — verify live endpoints (no deploy)\n'
-printf '\nChoice [1/2/3, default=2]: '
+printf '  [4] Frontend   — redeploy Vercel frontend only (skip AWS/Lambda)\n'
+printf '\nChoice [1/2/3/4, default=2]: '
 read -r _MODE
 _MODE="${_MODE:-2}"
 case "$_MODE" in
   3) exec bash "$ROOT/scripts/smoke-test.sh" ;;
+  4) TARGET="frontend-only" ;;
   2) TARGET="aws"; DEPLOY_WORKSPACE="lite"; TF_VAR_name_prefix="rag-lite"
      export DEPLOY_WORKSPACE TF_VAR_name_prefix
      ;;
   *) TARGET="local" ;;
 esac
+
+# ── frontend-only mode ────────────────────────────────────────────────────────
+if [[ "$TARGET" == "frontend-only" ]]; then
+  if ! command -v vercel >/dev/null 2>&1; then
+    printf '\n  Vercel CLI not found — installing...\n'
+    npm install -g vercel
+  fi
+  cd "$ROOT/frontend"
+  [[ -d node_modules ]] || npm install
+  printf '\n  Setting Vercel environment variables from .env (if any changed)...\n'
+  for _K in OPENAI_API_KEY ANTHROPIC_API_KEY NVIDIA_API_KEY; do
+    _V=$(_env_val "$_K")
+    [[ -n "$_V" ]] && _vercel_set_env "$_K" "$_V"
+  done
+  printf '  Deploying frontend to Vercel...\n'
+  vercel --prod --yes
+  exit 0
+fi
 
 # ── local mode ────────────────────────────────────────────────────────────────
 if [[ "$TARGET" == "local" ]]; then

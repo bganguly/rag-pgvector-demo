@@ -27,7 +27,7 @@ export default function ChatPanel({ provider, ingested }: { provider: Provider; 
       body: { provider },
       onError: async (err) => {
         console.error("[chat/onError] err.message:", err.message);
-        const anyErr = err as Record<string, unknown>;
+        const anyErr = err as unknown as Record<string, unknown>;
         console.error("[chat/onError] err.keys:", Object.keys(anyErr));
         console.error("[chat/onError] responseBody:", anyErr.responseBody);
         console.error("[chat/onError] status:", anyErr.status ?? anyErr.statusCode);
