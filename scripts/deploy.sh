@@ -110,8 +110,8 @@ if [[ "$TARGET" == "frontend-only" ]]; then
     printf '\n  Vercel CLI not found — installing...\n'
     npm install -g vercel
   fi
-  cd "$ROOT/frontend"
-  [[ -d node_modules ]] || npm install
+  [[ -d "$ROOT/frontend/node_modules" ]] || (cd "$ROOT/frontend" && npm install)
+  cd "$ROOT"
   printf '\n  Setting Vercel environment variables from .env (if any changed)...\n'
   for _K in OPENAI_API_KEY ANTHROPIC_API_KEY NVIDIA_API_KEY; do
     _V=$(_env_val "$_K")
@@ -376,8 +376,8 @@ if ! command -v vercel >/dev/null 2>&1; then
   npm install -g vercel
 fi
 
-cd "$ROOT/frontend"
-[[ -d node_modules ]] || npm install
+[[ -d "$ROOT/frontend/node_modules" ]] || (cd "$ROOT/frontend" && npm install)
+cd "$ROOT"
 
 printf '\n  Setting Vercel environment variables...\n'
 _vercel_env() {
