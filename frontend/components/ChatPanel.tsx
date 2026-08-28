@@ -151,7 +151,7 @@ export default function ChatPanel({ provider, ingested, onPersistedDetected }: {
           Query
         </span>
         <button
-          onClick={() => { setMessages([]); setCtxByExchange([]); setExpanded(new Set()); setShowSuggestions(true); }}
+          onClick={() => { setMessages([]); setCtxByExchange([]); setExpanded(new Set()); setShowSuggestions(true); setApiErrorMsg(null); }}
           className="text-xs px-2 py-1 rounded"
           style={{ color: "var(--text-2)", border: "1px solid var(--border)" }}
         >
@@ -188,8 +188,9 @@ export default function ChatPanel({ provider, ingested, onPersistedDetected }: {
         )}
 
 
-        {messages.map((m, i) => {
-          const usersBefore  = messages.slice(0, i).filter((x) => x.role === "user").length;
+        {messages.filter((m) => m.role === "user" || m.content !== "").map((m) => {
+          const origIdx      = messages.findIndex((x) => x.id === m.id);
+          const usersBefore  = messages.slice(0, origIdx).filter((x) => x.role === "user").length;
           const exchangeIdx  = m.role === "user" ? usersBefore : usersBefore - 1;
           const chunks       = ctxByExchange[exchangeIdx];
 

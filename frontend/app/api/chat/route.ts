@@ -3,15 +3,15 @@ import { anthropic } from "@ai-sdk/anthropic";
 import { createOpenAI } from "@ai-sdk/openai";
 
 const nim = createOpenAI({
-  baseURL: "https://integrate.api.nvidia.com/v1",
-  apiKey: process.env.NVIDIA_API_KEY ?? "",
+  baseURL: "https://openrouter.ai/api/v1",
+  apiKey: process.env.OPENROUTER_API_KEY ?? "",
 });
 
 const openai = createOpenAI({
   apiKey: process.env.OPENAI_API_KEY ?? "",
 });
 
-const NIM_MODEL = "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning";
+const NIM_MODEL = "nvidia/llama-3.1-nemotron-nano-8b-instruct";
 
 function pickModel(provider: string) {
   switch (provider) {
@@ -55,9 +55,9 @@ export async function POST(req: Request) {
 
   console.log(`[chat] POST provider=${provider} messages=${messages?.length}`);
 
-  if (provider === "nim" && !process.env.NVIDIA_API_KEY) {
-    console.error("[chat] NVIDIA_API_KEY missing");
-    return Response.json({ error: "NVIDIA_API_KEY is not configured on the server." }, { status: 502 });
+  if (provider === "nim" && !process.env.OPENROUTER_API_KEY) {
+    console.error("[chat] OPENROUTER_API_KEY missing");
+    return Response.json({ error: "OPENROUTER_API_KEY is not configured on the server." }, { status: 502 });
   }
 
   const query = messages.at(-1)?.content ?? "";
