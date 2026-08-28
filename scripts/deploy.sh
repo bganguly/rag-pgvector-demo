@@ -16,7 +16,7 @@ _aws_lite_count=$(_aws_tf_ws_count lite)
 printf '\n=== rag-pgvector-demo ===\n\n'
 
 # ── helpers ───────────────────────────────────────────────────────────────────
-_env_val()  { grep "^${1}=" "$ROOT/.env" 2>/dev/null | cut -d= -f2-; }
+_env_val()  { grep "^${1}=" "$ROOT/.env" 2>/dev/null | cut -d= -f2- || true; }
 _env_mask() { local v="$1"; [[ -z "$v" ]] && echo "(not set)" || echo "${v:0:8}...${v: -4}"; }
 _env_write() {
   local k="$1" v="$2"
