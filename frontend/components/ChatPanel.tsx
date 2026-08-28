@@ -35,8 +35,9 @@ const SUGGESTED = [
   "How is the Consumer Price Index calculated?",
 ];
 
-export default function ChatPanel({ provider, ingested, flushOnSwitch, onPersistedDetected }: { provider: Provider; ingested: boolean; flushOnSwitch: boolean; onPersistedDetected: () => void }) {
+export default function ChatPanel({ provider, ingested, flushOnSwitch, onPersistedDetected, onReset }: { provider: Provider; ingested: boolean; flushOnSwitch: boolean; onPersistedDetected: () => void; onReset: () => void }) {
   const [apiErrorMsg, setApiErrorMsg] = useState<string | null>(null);
+  const [flushing, setFlushing] = useState(false);
 
   const { messages, input, handleInputChange, isLoading, error, setMessages, setInput, append } =
     useChat({
@@ -107,6 +108,21 @@ export default function ChatPanel({ provider, ingested, flushOnSwitch, onPersist
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  async function flushKnowledgeBase() {
+    setFlushing(true);
+    try {
+      await fetch("/api/reset", { method: "DELETE" });
+    } finally {
+      setFlushing(false);
+      setMessages([]);
+      setCtxByExchange([]);
+      setExpanded(new Set());
+      setShowSuggestions(true);
+      setApiErrorMsg(null);
+      onReset();
+    }
+  }
+
   async function submitQuery(query: string) {
     const q = query.trim();
     if (!q || isLoading) return;
@@ -172,9 +188,23 @@ export default function ChatPanel({ provider, ingested, flushOnSwitch, onPersist
         {messages.length === 0 && (
           <div className="flex flex-col gap-2 mt-6 items-center text-center">
             {ingested ? (
-              <p className="text-sm" style={{ color: "var(--text-2)" }}>
-                Knowledge base ready — pick a question below or type your own.
-              </p>
+              <div className="flex flex-col items-center gap-2">
+                <p className="text-sm" style={{ color: "var(--text-2)" }}>
+                  Knowledge base ready — pick a question below or type your own.
+                </p>
+                <button
+                  onClick={flushKnowledgeBase}
+                  disabled={flushing}
+                  className="text-xs px-3 py-1 rounded transition-opacity"
+                  style={{
+                    border: "1px solid rgba(239,68,68,0.4)",
+                    color: "#ef4444",
+                    opacity: flushing ? 0.5 : 1,
+                  }}
+                >
+                  {flushing ? "Flushing…" : "Flush knowledge base"}
+                </button>
+              </div>
             ) : (
               <>
                 <p className="text-sm" style={{ color: "var(--text-2)" }}>

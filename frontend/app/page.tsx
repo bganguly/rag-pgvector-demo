@@ -132,7 +132,7 @@ export default function Home() {
           <UploadPanel onIngest={() => { setIngested(true); setTab("chat"); }} />
         </div>
         <div className={`${tab === "chat" ? "flex" : "hidden"} sm:flex flex-1 overflow-hidden flex-col`}>
-          <ChatPanel provider={provider} ingested={ingested} flushOnSwitch={flushOnSwitch} onPersistedDetected={() => setIngested(true)} />
+          <ChatPanel provider={provider} ingested={ingested} flushOnSwitch={flushOnSwitch} onPersistedDetected={() => setIngested(true)} onReset={() => setIngested(false)} />
         </div>
       </div>
     </div>
