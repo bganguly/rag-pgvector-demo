@@ -12,10 +12,6 @@ const openai = createOpenAI({
 });
 
 const NIM_MODEL = "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning";
-const NIM_DIAGNOSTIC_MODELS = [
-  "nvidia/llama-3.1-nemotron-70b-instruct",
-  "mistralai/mistral-7b-instruct-v0.3",
-];
 
 function pickModel(provider: string) {
   switch (provider) {
@@ -52,56 +48,6 @@ function logErr(tag: string, error: unknown) {
   }
 }
 
-async function nimPreflight(): Promise<void> {
-  const key = process.env.NVIDIA_API_KEY ?? "";
-  const keyInfo = key ? `len=${key.length} prefix=${key.slice(0, 8)}... suffix=...${key.slice(-6)}` : "(EMPTY — env var not set)";
-  console.log(`[nim-preflight] NVIDIA_API_KEY: ${keyInfo}`);
-
-  try {
-    const modelsRes = await fetch("https://integrate.api.nvidia.com/v1/models", {
-      headers: { Authorization: `Bearer ${key}` },
-      signal: AbortSignal.timeout(6000),
-    });
-    const modelsBody = await modelsRes.text();
-    console.log(`[nim-preflight] /v1/models status=${modelsRes.status}`);
-    try {
-      const parsed = JSON.parse(modelsBody);
-      const ids = (parsed.data || []).map((m: {id: string}) => m.id).filter((id: string) => !id.includes("embed") && !id.includes("rerank"));
-      const hasNemotron = ids.includes(NIM_MODEL);
-      console.log(`[nim-preflight] /v1/models count=${ids.length} has-nemotron=${hasNemotron} all=${ids.join("|")}`);
-    } catch {
-      console.log(`[nim-preflight] /v1/models raw=${modelsBody.slice(0, 500)}`);
-    }
-  } catch (e) {
-    console.error(`[nim-preflight] /v1/models fetch error=${e}`);
-  }
-
-  const allModels = [NIM_MODEL, ...NIM_DIAGNOSTIC_MODELS];
-  for (const model of allModels) {
-    const tag = model === NIM_MODEL ? "[primary]" : "[diagnostic-only]";
-    try {
-      console.log(`[nim-preflight] ${tag} testing model=${model}`);
-      const chatRes = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${key}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model,
-          messages: [{ role: "user", content: "hi" }],
-          max_tokens: 1,
-          stream: false,
-        }),
-        signal: AbortSignal.timeout(12000),
-      });
-      const chatBody = await chatRes.text();
-      console.log(`[nim-preflight] ${tag} model=${model} status=${chatRes.status} body=${chatBody.slice(0, 400)}`);
-    } catch (e) {
-      console.error(`[nim-preflight] ${tag} model=${model} fetch error=${e}`);
-    }
-  }
-}
 
 export async function POST(req: Request) {
   const body = await req.json();
@@ -112,11 +58,6 @@ export async function POST(req: Request) {
   if (provider === "nim" && !process.env.NVIDIA_API_KEY) {
     console.error("[chat] NVIDIA_API_KEY missing");
     return Response.json({ error: "NVIDIA_API_KEY is not configured on the server." }, { status: 502 });
-  }
-
-  if (provider === "nim") {
-    console.log(`[chat] nim starting preflight, model=${NIM_MODEL}`);
-    await nimPreflight();
   }
 
   const query = messages.at(-1)?.content ?? "";
