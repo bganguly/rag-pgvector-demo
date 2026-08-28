@@ -171,7 +171,7 @@ export default function ChatPanel({ provider, ingested, onPersistedDetected }: {
               </div>
             ) : ingested ? (
               <p className="text-sm" style={{ color: "var(--text-2)" }}>
-                Knowledge base ready — pick a question below or type your own.
+                Knowledge base ready — try a sample question below, or flush from the left panel to start fresh.
               </p>
             ) : (
               <>

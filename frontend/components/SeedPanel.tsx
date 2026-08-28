@@ -64,7 +64,7 @@ async function fetchWikiText(slug: string): Promise<string> {
   return (page?.extract as string) ?? "";
 }
 
-export default function SeedPanel({ onReady }: { onReady?: () => void }) {
+export default function SeedPanel({ onReady, ingested, onFlush }: { onReady?: () => void; ingested?: boolean; onFlush?: () => void }) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [states, setStates]   = useState<Record<string, TState>>(blank);
   const [running, setRunning] = useState(false);
@@ -101,6 +101,7 @@ export default function SeedPanel({ onReady }: { onReady?: () => void }) {
     setStates(blank());
     setSelected(new Set());
     await fetch("/api/reset", { method: "DELETE" }).catch(() => null);
+    onFlush?.();
   }
 
   async function load(clearFirst = false) {
@@ -196,6 +197,25 @@ export default function SeedPanel({ onReady }: { onReady?: () => void }) {
           </div>
       </div>
 
+
+      {ingested && !TOPICS.some((t) => states[t.id].status === "done") && !running && (
+        <div
+          className="rounded px-3 py-2.5 flex items-center justify-between gap-2"
+          style={{ background: "rgba(34,197,94,0.06)", border: "1px solid #22c55e33" }}
+        >
+          <div>
+            <p className="text-xs" style={{ color: "#22c55e" }}>Pre-existing data in KB</p>
+            <p className="text-[10px] mt-0.5" style={{ color: "var(--text-2)" }}>Select topics to add more, or flush to start fresh</p>
+          </div>
+          <button
+            onClick={resetKB}
+            className="text-xs px-2.5 py-1 rounded shrink-0"
+            style={{ color: "#ef4444", border: "1px solid #ef444433" }}
+          >
+            Flush
+          </button>
+        </div>
+      )}
 
       <div className="flex flex-wrap gap-1.5">
         {TOPICS.map((t) => {

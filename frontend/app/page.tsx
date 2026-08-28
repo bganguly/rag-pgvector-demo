@@ -88,7 +88,7 @@ export default function Home() {
           className={`${tab === "setup" ? "flex" : "hidden"} sm:flex w-full sm:w-80 shrink-0 border-r overflow-y-auto flex-col`}
           style={{ background: "var(--surface)", borderColor: "var(--border)" }}
         >
-          <SeedPanel onReady={() => { setIngested(true); setTab("chat"); }} />
+          <SeedPanel onReady={() => { setIngested(true); setTab("chat"); }} ingested={ingested} onFlush={() => setIngested(false)} />
           <div style={{ borderTop: "1px solid var(--border)" }} />
           <UploadPanel onIngest={() => { setIngested(true); setTab("chat"); }} />
         </div>
