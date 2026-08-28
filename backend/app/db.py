@@ -1,3 +1,5 @@
+import asyncio
+
 import asyncpg
 from langchain_openai import OpenAIEmbeddings
 from langchain_postgres import PGVector
@@ -36,7 +38,18 @@ def get_vector_store() -> PGVector:
 
 
 async def init_db() -> None:
-    pool = await get_pool()
-    async with pool.acquire() as conn:
-        await conn.execute("CREATE EXTENSION IF NOT EXISTS vector")
-    get_vector_store().create_collection()
+    global _pool
+    last_err: Exception | None = None
+    for attempt in range(3):
+        try:
+            pool = await get_pool()
+            async with pool.acquire() as conn:
+                await conn.execute("CREATE EXTENSION IF NOT EXISTS vector")
+            get_vector_store().create_collection()
+            return
+        except Exception as e:
+            last_err = e
+            _pool = None  # force fresh pool on next attempt
+            if attempt < 2:
+                await asyncio.sleep(3)
+    raise last_err  # type: ignore[misc]
