@@ -345,6 +345,12 @@ echo "[5/5] Updating Lambda config and deploying frontend to Vercel..."
 printf '  Waiting for Lambda to be ready...\n'
 aws lambda wait function-updated --function-name "$LAMBDA_NAME" --no-cli-pager
 
+aws lambda update-function-code \
+  --function-name "$LAMBDA_NAME" \
+  --image-uri "${BE_ECR_URI}:${TAG}" \
+  --no-cli-pager >/dev/null
+aws lambda wait function-updated --function-name "$LAMBDA_NAME" --no-cli-pager
+
 _ENV_FILE="$(mktemp /tmp/lambda-env-XXXXXX)"
 python3 - "$DATABASE_URL" "$PGVECTOR_CONNECTION" "$OPENAI_API_KEY" \
   "${ANTHROPIC_API_KEY:-}" "${NVIDIA_API_KEY:-}" <<'PYEOF' > "$_ENV_FILE"
@@ -360,12 +366,6 @@ aws lambda update-function-configuration \
   --environment "file://${_ENV_FILE}" \
   --no-cli-pager >/dev/null
 rm -f "$_ENV_FILE"
-aws lambda wait function-updated --function-name "$LAMBDA_NAME" --no-cli-pager
-
-aws lambda update-function-code \
-  --function-name "$LAMBDA_NAME" \
-  --image-uri "${BE_ECR_URI}:${TAG}" \
-  --no-cli-pager >/dev/null
 aws lambda wait function-updated --function-name "$LAMBDA_NAME" --no-cli-pager
 printf '  Lambda active.\n'
 
