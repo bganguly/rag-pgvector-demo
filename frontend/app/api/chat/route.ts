@@ -11,7 +11,7 @@ const openai = createOpenAI({
   apiKey: process.env.OPENAI_API_KEY ?? "",
 });
 
-const NIM_MODEL = "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free";
+const NIM_MODEL = "nvidia/nemotron-3.5-lightning";
 
 function pickModel(provider: string) {
   switch (provider) {
