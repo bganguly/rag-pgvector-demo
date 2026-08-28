@@ -18,7 +18,7 @@ const SUGGESTED = [
   "How is the Consumer Price Index calculated?",
 ];
 
-export default function ChatPanel({ provider, ingested }: { provider: Provider; ingested: boolean }) {
+export default function ChatPanel({ provider, ingested, flushOnSwitch }: { provider: Provider; ingested: boolean; flushOnSwitch: boolean }) {
   const [apiErrorMsg, setApiErrorMsg] = useState<string | null>(null);
 
   const { messages, input, handleInputChange, isLoading, error, setMessages, setInput, append } =
@@ -63,6 +63,19 @@ export default function ChatPanel({ provider, ingested }: { provider: Provider; 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  const isFirstRender = useRef(true);
+  useEffect(() => {
+    if (isFirstRender.current) { isFirstRender.current = false; return; }
+    if (flushOnSwitch) {
+      setMessages([]);
+      setCtxByExchange([]);
+      setExpanded(new Set());
+      setShowSuggestions(true);
+      setApiErrorMsg(null);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [provider]);
 
   async function submitQuery(query: string) {
     const q = query.trim();

@@ -16,6 +16,7 @@ const PROVIDER_LABELS: Record<Provider, { short: string; full: string }> = {
 
 export default function Home() {
   const [provider, setProvider] = useState<Provider>("anthropic");
+  const [flushOnSwitch, setFlushOnSwitch] = useState(true);
   const [ingested, setIngested] = useState(false);
   const [tab, setTab] = useState<"setup" | "chat">("setup");
 
@@ -40,7 +41,7 @@ export default function Home() {
         </div>
 
         <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-<span
+          <span
             className="hidden sm:inline text-xs font-mono uppercase tracking-wider"
             style={{ color: "var(--text-2)" }}
           >
@@ -61,6 +62,44 @@ export default function Home() {
               <span className="hidden sm:inline">{PROVIDER_LABELS[p].full}</span>
             </button>
           ))}
+
+          <div style={{ width: 1, height: 16, background: "var(--border)", margin: "0 2px" }} />
+
+          <label className="flex items-center gap-1.5 cursor-pointer select-none" title="Clear chat history when switching providers">
+            <button
+              role="switch"
+              aria-checked={flushOnSwitch}
+              onClick={() => setFlushOnSwitch((v) => !v)}
+              className="relative rounded-full shrink-0"
+              style={{
+                width: 28,
+                height: 16,
+                background: flushOnSwitch ? "var(--accent)" : "var(--border)",
+                transition: "background 0.15s",
+                border: "none",
+                padding: 0,
+              }}
+            >
+              <span
+                style={{
+                  position: "absolute",
+                  width: 12,
+                  height: 12,
+                  top: 2,
+                  left: flushOnSwitch ? 14 : 2,
+                  background: "#fff",
+                  borderRadius: "50%",
+                  transition: "left 0.15s",
+                }}
+              />
+            </button>
+            <span
+              className="hidden sm:inline text-[10px] font-mono uppercase tracking-wider"
+              style={{ color: "var(--text-2)" }}
+            >
+              Flush on switch
+            </span>
+          </label>
         </div>
       </header>
 
@@ -93,7 +132,7 @@ export default function Home() {
           <UploadPanel onIngest={() => { setIngested(true); setTab("chat"); }} />
         </div>
         <div className={`${tab === "chat" ? "flex" : "hidden"} sm:flex flex-1 overflow-hidden flex-col`}>
-          <ChatPanel provider={provider} ingested={ingested} />
+          <ChatPanel provider={provider} ingested={ingested} flushOnSwitch={flushOnSwitch} />
         </div>
       </div>
     </div>
