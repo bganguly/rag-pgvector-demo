@@ -61,7 +61,7 @@ export async function POST(req: Request) {
   }
 
   const query = messages.at(-1)?.content ?? "";
-  const backendUrl = process.env.BACKEND_URL ?? "http://localhost:8001";
+  const backendUrl = (process.env.BACKEND_URL ?? "http://localhost:8001").replace(/\/$/, "");
 
   console.log(`[chat] query="${query.slice(0, 80)}" backendUrl=${backendUrl}`);
 

@@ -1,6 +1,6 @@
 export async function POST(req: Request) {
   const formData = await req.formData();
-  const backendUrl = process.env.BACKEND_URL ?? "http://localhost:8001";
+  const backendUrl = (process.env.BACKEND_URL ?? "http://localhost:8001").replace(/\/$/, "");
 
   try {
     const res = await fetch(`${backendUrl}/api/ingest`, {

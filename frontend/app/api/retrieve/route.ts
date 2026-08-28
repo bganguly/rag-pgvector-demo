@@ -1,6 +1,6 @@
 export async function POST(req: Request) {
   const body = await req.json();
-  const backendUrl = process.env.BACKEND_URL ?? "http://localhost:8001";
+  const backendUrl = (process.env.BACKEND_URL ?? "http://localhost:8001").replace(/\/$/, "");
 
   try {
     const res = await fetch(`${backendUrl}/api/retrieve`, {
