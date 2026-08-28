@@ -272,6 +272,17 @@ export default function ChatPanel({ provider, ingested, onPersistedDetected }: {
           </div>
         )}
 
+        {!isLoading && !error && (() => { const last = messages.at(-1); return last?.role === "assistant" && last.content === ""; })() && (
+          <div className="flex justify-start">
+            <div
+              className="rounded-lg px-4 py-2.5 text-sm max-w-[80%]"
+              style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.3)", color: "#ef4444" }}
+            >
+              {provider === "nim" ? "NVIDIA NIM (via OpenRouter) returned an empty response — the model may be rate-limited or temporarily unavailable. Try again or switch provider." : "Model returned an empty response. Try again."}
+            </div>
+          </div>
+        )}
+
         <div ref={bottomRef} />
       </div>
 
