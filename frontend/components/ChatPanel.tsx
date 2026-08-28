@@ -42,7 +42,11 @@ export default function ChatPanel({ provider, ingested }: { provider: Provider; 
           try {
             const parsed = JSON.parse(raw);
             console.error("[chat/onError] parsed responseBody:", parsed);
-            if (parsed.error) { setApiErrorMsg(parsed.error); return; }
+            if (parsed.error) {
+              const ev = parsed.error;
+              setApiErrorMsg(typeof ev === "string" ? ev : ((ev as Record<string, unknown>)?.message as string) ?? JSON.stringify(ev));
+              return;
+            }
           } catch (pe) {
             console.error("[chat/onError] JSON.parse error:", pe);
           }

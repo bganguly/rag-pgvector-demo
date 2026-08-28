@@ -28,6 +28,14 @@ function pickModel(provider: string) {
   }
 }
 
+function extractMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  const e = error as Record<string, unknown>;
+  const candidate = e?.message ?? e?.detail ?? e?.title;
+  if (typeof candidate === "string") return candidate;
+  try { return JSON.stringify(e ?? error); } catch { return String(error); }
+}
+
 function logErr(tag: string, error: unknown) {
   const anyErr = error as Record<string, unknown>;
   console.error(`${tag} type=${error?.constructor?.name}`);
@@ -163,14 +171,12 @@ Then answer the question from your general knowledge.`;
     console.log(`[chat] streamText returned, piping to response`);
     return result.toDataStreamResponse({
       getErrorMessage: (error) => {
-        const msg = error instanceof Error ? error.message : String(error);
         logErr(`[chat/${provider}] stream-error`, error);
-        return msg;
+        return extractMessage(error);
       },
     });
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : String(e);
     logErr(`[chat/${provider}] sync-error`, e);
-    return Response.json({ error: msg }, { status: 502 });
+    return Response.json({ error: extractMessage(e) }, { status: 502 });
   }
 }
