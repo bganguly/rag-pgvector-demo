@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 const TOPICS = [
   { id: "fed",      label: "Federal Reserve",          slug: "Federal_Reserve" },
@@ -64,7 +64,7 @@ async function fetchWikiText(slug: string): Promise<string> {
   return (page?.extract as string) ?? "";
 }
 
-export default function SeedPanel({ onReady, resetKey }: { onReady?: () => void; resetKey?: number }) {
+export default function SeedPanel({ onReady }: { onReady?: () => void }) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [states, setStates]   = useState<Record<string, TState>>(blank);
   const [running, setRunning] = useState(false);
@@ -75,16 +75,6 @@ export default function SeedPanel({ onReady, resetKey }: { onReady?: () => void;
   useEffect(() => {
     fetch("/api/health").catch(() => null);
   }, []);
-
-  useEffect(() => {
-    if (resetKey === undefined) return;
-    setStates(blank());
-    setSelected(new Set());
-    setRunning(false);
-    setActiveBatch([]);
-    setTotal(0);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [resetKey]);
 
   useEffect(() => {
     if (!running) return;
