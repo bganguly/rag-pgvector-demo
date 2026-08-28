@@ -38,6 +38,7 @@ const SUGGESTED = [
 export default function ChatPanel({ provider, ingested, flushOnSwitch, onPersistedDetected, onReset }: { provider: Provider; ingested: boolean; flushOnSwitch: boolean; onPersistedDetected: () => void; onReset: () => void }) {
   const [apiErrorMsg, setApiErrorMsg] = useState<string | null>(null);
   const [flushing, setFlushing] = useState(false);
+  const [probing, setProbing] = useState(true);
 
   const { messages, input, handleInputChange, isLoading, error, setMessages, setInput, append } =
     useChat({
@@ -96,7 +97,7 @@ export default function ChatPanel({ provider, ingested, flushOnSwitch, onPersist
   }, [provider]);
 
   useEffect(() => {
-    if (ingested) return;
+    if (ingested) { setProbing(false); return; }
     fetch("/api/retrieve", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -104,7 +105,8 @@ export default function ChatPanel({ provider, ingested, flushOnSwitch, onPersist
     })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => { if (data?.chunks?.length) onPersistedDetected(); })
-      .catch(() => null);
+      .catch(() => null)
+      .finally(() => setProbing(false));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -187,7 +189,14 @@ export default function ChatPanel({ provider, ingested, flushOnSwitch, onPersist
       <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-3">
         {messages.length === 0 && (
           <div className="flex flex-col gap-2 mt-6 items-center text-center">
-            {ingested ? (
+            {probing ? (
+              <div className="flex items-center gap-2" style={{ color: "var(--text-2)", opacity: 0.6 }}>
+                <svg className="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+                </svg>
+                <span className="text-xs font-mono">Checking knowledge base…</span>
+              </div>
+            ) : ingested ? (
               <div className="flex flex-col items-center gap-2">
                 <p className="text-sm" style={{ color: "var(--text-2)" }}>
                   Knowledge base ready — pick a question below or type your own.
@@ -218,6 +227,7 @@ export default function ChatPanel({ provider, ingested, flushOnSwitch, onPersist
             )}
           </div>
         )}
+
 
         {messages.map((m, i) => {
           const usersBefore  = messages.slice(0, i).filter((x) => x.role === "user").length;
