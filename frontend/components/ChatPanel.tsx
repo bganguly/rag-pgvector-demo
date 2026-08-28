@@ -35,7 +35,7 @@ const SUGGESTED = [
   "How is the Consumer Price Index calculated?",
 ];
 
-export default function ChatPanel({ provider, ingested, flushOnSwitch, onPersistedDetected }: { provider: Provider; ingested: boolean; flushOnSwitch: boolean; onPersistedDetected: () => void }) {
+export default function ChatPanel({ provider, ingested, clearKey, onPersistedDetected }: { provider: Provider; ingested: boolean; clearKey: number; onPersistedDetected: () => void }) {
   const [apiErrorMsg, setApiErrorMsg] = useState<string | null>(null);
   const [probing, setProbing] = useState(true);
 
@@ -82,18 +82,14 @@ export default function ChatPanel({ provider, ingested, flushOnSwitch, onPersist
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const isFirstRender = useRef(true);
   useEffect(() => {
-    if (isFirstRender.current) { isFirstRender.current = false; return; }
-    if (flushOnSwitch) {
-      setMessages([]);
-      setCtxByExchange([]);
-      setExpanded(new Set());
-      setShowSuggestions(true);
-      setApiErrorMsg(null);
-    }
+    setMessages([]);
+    setCtxByExchange([]);
+    setExpanded(new Set());
+    setShowSuggestions(true);
+    setApiErrorMsg(null);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [provider]);
+  }, [clearKey]);
 
   useEffect(() => {
     if (ingested) { setProbing(false); return; }
