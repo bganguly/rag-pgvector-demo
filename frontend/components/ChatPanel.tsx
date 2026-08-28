@@ -163,11 +163,12 @@ export default function ChatPanel({ provider, ingested, onPersistedDetected }: {
         {messages.length === 0 && (
           <div className="flex flex-col gap-2 mt-6 items-center text-center">
             {probing ? (
-              <div className="flex items-center gap-2" style={{ color: "var(--text-2)", opacity: 0.6 }}>
-                <svg className="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
-                </svg>
-                <span className="text-xs font-mono">Checking knowledge base…</span>
+              <div className="flex flex-col items-center gap-3">
+                <div
+                  className="h-7 w-7 animate-spin rounded-full border-2 border-t-transparent"
+                  style={{ borderColor: "var(--border)", borderTopColor: "var(--accent)" }}
+                />
+                <span className="text-xs font-mono" style={{ color: "var(--text-2)" }}>Checking knowledge base…</span>
               </div>
             ) : ingested ? (
               <p className="text-sm" style={{ color: "var(--text-2)" }}>
