@@ -125,6 +125,7 @@ export default function SeedPanel({ onReady }: { onReady?: () => void }) {
     }
 
     let acc = 0;
+    let anySucceeded = false;
 
     for (let i = 0; i < batch.length; i++) {
       const t = batch[i];
@@ -157,13 +158,14 @@ export default function SeedPanel({ onReady }: { onReady?: () => void }) {
         acc += data.chunks ?? 0;
         setTotal(acc);
         set(t.id, { status: "done", chunks: data.chunks });
+        anySucceeded = true;
       } catch (e) {
         set(t.id, { status: "error", errorMsg: e instanceof Error ? e.message : "failed" });
       }
     }
 
     setRunning(false);
-    onReady?.();
+    if (anySucceeded) onReady?.();
   }
 
   const toLoad          = () => TOPICS.filter((t) => selected.has(t.id));
