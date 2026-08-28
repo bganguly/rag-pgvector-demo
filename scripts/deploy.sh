@@ -86,7 +86,7 @@ esac
 # ── API key quick-update (all deploy modes) ──────────────────────────────────
 if [[ "$TARGET" != "local" && "$TARGET" != "smoke" ]]; then
   printf '\nAPI keys (Enter to skip each):\n'
-  for _K in OPENAI_API_KEY ANTHROPIC_API_KEY NVIDIA_API_KEY; do
+  for _K in OPENAI_API_KEY ANTHROPIC_API_KEY OPENROUTER_API_KEY; do
     _CUR=$(_env_val "$_K")
     printf '  %-24s  %s  — update? [y/N]: ' "$_K" "$(_env_mask "$_CUR")"
     read -r _ANS
@@ -113,7 +113,7 @@ if [[ "$TARGET" == "frontend-only" ]]; then
   [[ -d "$ROOT/frontend/node_modules" ]] || (cd "$ROOT/frontend" && npm install)
   cd "$ROOT"
   printf '\n  Setting Vercel environment variables from .env (if any changed)...\n'
-  for _K in OPENAI_API_KEY ANTHROPIC_API_KEY NVIDIA_API_KEY; do
+  for _K in OPENAI_API_KEY ANTHROPIC_API_KEY OPENROUTER_API_KEY; do
     _V=$(_env_val "$_K")
     [[ -n "$_V" ]] && _vercel_set_env "$_K" "$_V"
   done
@@ -153,7 +153,7 @@ if [[ "$TARGET" == "local" ]]; then
 
   cd "$ROOT/frontend"
   [[ -d node_modules ]] || npm install
-  grep -E '^(OPENAI|ANTHROPIC|NVIDIA|BACKEND)' "$ROOT/.env" > "$ROOT/frontend/.env.local" 2>/dev/null || true
+  grep -E '^(OPENAI|ANTHROPIC|OPENROUTER|BACKEND)' "$ROOT/.env" > "$ROOT/frontend/.env.local" 2>/dev/null || true
   echo "BACKEND_URL=http://localhost:8001" >> "$ROOT/frontend/.env.local"
   npm run dev &
   FRONTEND_PID=$!
@@ -279,13 +279,13 @@ _prompt_key() {
   fi
 }
 
-_OLD_OPENAI=$(aws ssm get-parameter   --name "/${TF_VAR_name_prefix}/openai-key"    --with-decryption --query Parameter.Value --output text 2>/dev/null || echo "")
-_OLD_ANTHROPIC=$(aws ssm get-parameter --name "/${TF_VAR_name_prefix}/anthropic-key" --with-decryption --query Parameter.Value --output text 2>/dev/null || echo "")
-_OLD_NVIDIA=$(aws ssm get-parameter   --name "/${TF_VAR_name_prefix}/nvidia-key"    --with-decryption --query Parameter.Value --output text 2>/dev/null || echo "")
+_OLD_OPENAI=$(aws ssm get-parameter      --name "/${TF_VAR_name_prefix}/openai-key"      --with-decryption --query Parameter.Value --output text 2>/dev/null || echo "")
+_OLD_ANTHROPIC=$(aws ssm get-parameter   --name "/${TF_VAR_name_prefix}/anthropic-key"   --with-decryption --query Parameter.Value --output text 2>/dev/null || echo "")
+_OLD_OPENROUTER=$(aws ssm get-parameter  --name "/${TF_VAR_name_prefix}/openrouter-key"  --with-decryption --query Parameter.Value --output text 2>/dev/null || echo "")
 
-OPENAI_API_KEY=$(_prompt_key    "OPENAI_API_KEY"    "$_OLD_OPENAI"    required)
-ANTHROPIC_API_KEY=$(_prompt_key "ANTHROPIC_API_KEY" "$_OLD_ANTHROPIC" optional)
-NVIDIA_API_KEY=$(_prompt_key    "NVIDIA_API_KEY"    "$_OLD_NVIDIA"    optional)
+OPENAI_API_KEY=$(_prompt_key       "OPENAI_API_KEY"      "$_OLD_OPENAI"      required)
+ANTHROPIC_API_KEY=$(_prompt_key    "ANTHROPIC_API_KEY"   "$_OLD_ANTHROPIC"   optional)
+OPENROUTER_API_KEY=$(_prompt_key   "OPENROUTER_API_KEY"  "$_OLD_OPENROUTER"  optional)
 
 _ssm_update() {
   local _pname="$1" _new="$2" _old="$3"
@@ -295,9 +295,9 @@ _ssm_update() {
     --type SecureString --overwrite --no-cli-pager >/dev/null
   printf '  Updated SSM: %s\n' "$_pname"
 }
-_ssm_update "/${TF_VAR_name_prefix}/openai-key"    "${OPENAI_API_KEY:-}"    "$_OLD_OPENAI"
-_ssm_update "/${TF_VAR_name_prefix}/anthropic-key" "${ANTHROPIC_API_KEY:-}" "$_OLD_ANTHROPIC"
-_ssm_update "/${TF_VAR_name_prefix}/nvidia-key"    "${NVIDIA_API_KEY:-}"    "$_OLD_NVIDIA"
+_ssm_update "/${TF_VAR_name_prefix}/openai-key"      "${OPENAI_API_KEY:-}"      "$_OLD_OPENAI"
+_ssm_update "/${TF_VAR_name_prefix}/anthropic-key"  "${ANTHROPIC_API_KEY:-}"   "$_OLD_ANTHROPIC"
+_ssm_update "/${TF_VAR_name_prefix}/openrouter-key" "${OPENROUTER_API_KEY:-}"  "$_OLD_OPENROUTER"
 
 TAG=$(git -C "$ROOT" rev-parse --short HEAD 2>/dev/null || date +%Y%m%d%H%M%S)
 
@@ -353,9 +353,9 @@ aws lambda wait function-updated --function-name "$LAMBDA_NAME" --no-cli-pager
 
 _ENV_FILE="$(mktemp /tmp/lambda-env-XXXXXX)"
 python3 - "$DATABASE_URL" "$PGVECTOR_CONNECTION" "$OPENAI_API_KEY" \
-  "${ANTHROPIC_API_KEY:-}" "${NVIDIA_API_KEY:-}" <<'PYEOF' > "$_ENV_FILE"
+  "${ANTHROPIC_API_KEY:-}" "${OPENROUTER_API_KEY:-}" <<'PYEOF' > "$_ENV_FILE"
 import json, sys
-keys = ['DATABASE_URL','PGVECTOR_CONNECTION','OPENAI_API_KEY','ANTHROPIC_API_KEY','NVIDIA_API_KEY','CORS_ORIGINS']
+keys = ['DATABASE_URL','PGVECTOR_CONNECTION','OPENAI_API_KEY','ANTHROPIC_API_KEY','OPENROUTER_API_KEY','CORS_ORIGINS']
 vals = list(sys.argv[1:]) + ['*']
 env = {k: v for k, v in zip(keys, vals) if v}
 print(json.dumps({'Variables': env}))
@@ -386,10 +386,10 @@ _vercel_env() {
   printf '%s' "$_val" | vercel env add "$_key" production --yes 2>/dev/null || \
   printf '%s' "$_val" | vercel env add "$_key" production --force 2>/dev/null || true
 }
-_vercel_env "BACKEND_URL"        "$BACKEND_URL"
-_vercel_env "OPENAI_API_KEY"     "${OPENAI_API_KEY:-}"
-_vercel_env "ANTHROPIC_API_KEY"  "${ANTHROPIC_API_KEY:-}"
-_vercel_env "NVIDIA_API_KEY"     "${NVIDIA_API_KEY:-}"
+_vercel_env "BACKEND_URL"          "$BACKEND_URL"
+_vercel_env "OPENAI_API_KEY"       "${OPENAI_API_KEY:-}"
+_vercel_env "ANTHROPIC_API_KEY"    "${ANTHROPIC_API_KEY:-}"
+_vercel_env "OPENROUTER_API_KEY"   "${OPENROUTER_API_KEY:-}"
 
 printf '  Deploying frontend to Vercel...\n'
 _VERCEL_OUT=$(mktemp /tmp/vercel-out-XXXXXX)
