@@ -10,6 +10,23 @@ interface Chunk {
   score: number;
 }
 
+function friendlyError(provider: string, msg: string | null): string {
+  if (!msg) {
+    return provider === "nim"
+      ? "Check your API key and quota at build.nvidia.com."
+      : "An error occurred. Check your API key and try again.";
+  }
+  if (provider === "nim") {
+    if (/resourceexhausted|request.?limit/i.test(msg))
+      return "NIM request quota reached — the free tier allows a limited number of requests per window. Wait a few minutes and try again.";
+    if (/not.?found|404/i.test(msg))
+      return "NIM model unavailable — the selected model is not accessible with this API key.";
+    if (/unauthorized|401|invalid.*(key|token)/i.test(msg))
+      return "Invalid NIM API key — check your key at build.nvidia.com.";
+  }
+  return msg;
+}
+
 const SUGGESTED = [
   "How does the Fed control inflation?",
   "What is quantitative easing?",
@@ -188,7 +205,8 @@ export default function ChatPanel({ provider, ingested, flushOnSwitch }: { provi
                       style={{ color: "var(--text-2)" }}
                     >
                       <span style={{ color: "var(--accent)" }}>⊙</span>
-                      Retrieved {chunks.length} chunks
+                      Retrieved {chunks.length} chunk{chunks.length !== 1 ? "s" : ""}
+                      {!ingested && <span style={{ opacity: 0.55 }}> (persisted)</span>}
                       <span style={{ opacity: 0.5 }}>{expanded.has(exchangeIdx) ? "▲" : "▼"}</span>
                     </button>
                     {expanded.has(exchangeIdx) && (
@@ -235,11 +253,7 @@ export default function ChatPanel({ provider, ingested, flushOnSwitch }: { provi
               className="rounded-lg px-4 py-2.5 text-sm max-w-[80%]"
               style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.3)", color: "#ef4444" }}
             >
-              {apiErrorMsg
-                ? `${provider === "nim" ? "NVIDIA NIM" : provider === "openai" ? "OpenAI" : "Anthropic"} error — ${apiErrorMsg}`
-                : provider === "nim"
-                  ? "NVIDIA NIM error — check your API key and quota at build.nvidia.com."
-                  : "An error occurred. Check your API key and try again."}
+              {`${provider === "nim" ? "NVIDIA NIM" : provider === "openai" ? "OpenAI" : "Anthropic"} error — ${friendlyError(provider, apiErrorMsg)}`}
             </div>
           </div>
         )}
