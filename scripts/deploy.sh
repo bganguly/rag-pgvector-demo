@@ -347,7 +347,7 @@ aws lambda wait function-updated --function-name "$LAMBDA_NAME" --no-cli-pager
 
 aws lambda update-function-code \
   --function-name "$LAMBDA_NAME" \
-  --image-uri "${BE_ECR_URI}:${TAG}" \
+  --image-uri "${BE_ECR_URI}:latest" \
   --no-cli-pager >/dev/null
 aws lambda wait function-updated --function-name "$LAMBDA_NAME" --no-cli-pager
 
