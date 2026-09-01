@@ -414,8 +414,8 @@ printf '  Cost:     ~$0/mo  (Lambda + Neon + Vercel free tiers)\n'
 printf '  Tear down: ./scripts/infra-down.sh --aws\n'
 
 
-printf '\nRun smoke test? [y/N]: '
+printf '\nRun smoke test? [Y/n]: '
 read -r _SMOKE
-if [[ "${_SMOKE:-n}" =~ ^[Yy] ]]; then
+if [[ "${_SMOKE:-Y}" =~ ^[Yy] ]]; then
   bash "$ROOT/scripts/smoke-test.sh" --backend-url "$BACKEND_URL" --frontend-url "$FRONTEND_URL"
 fi
