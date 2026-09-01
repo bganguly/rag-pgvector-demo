@@ -128,6 +128,7 @@ if [[ "$TARGET" == "frontend-only" ]]; then
   read -r _SMOKE4
   if [[ "${_SMOKE4:-Y}" =~ ^[Yy] ]]; then
     _BE4=$(_env_val "BACKEND_URL")
+    [[ "$_BE4" == *localhost* ]] && _BE4=""
     bash "$ROOT/scripts/smoke-test.sh" \
       ${_BE4:+--backend-url "$_BE4"} \
       ${FRONTEND_URL4:+--frontend-url "$FRONTEND_URL4"}
