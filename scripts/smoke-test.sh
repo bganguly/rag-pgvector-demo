@@ -71,21 +71,49 @@ _check "GET / (frontend) → 200" "$_R" "200" ""
 _H=$(curl -s -o /tmp/_st_body -w '%{http_code}' --max-time 15 "${FRONTEND_URL}/api-explorer.html" || echo "000"); _R="${_H:0:3}"
 _check "GET /api-explorer.html → 200" "$_R" "200" "$(cat /tmp/_st_body)" 'base-url-input'
 
-# 4. POST /api/ingest — smoke payload
-> /tmp/_st_body
-_H=$(curl -s -o /tmp/_st_body -w '%{http_code}' --max-time 30 \
-  -X POST "${BACKEND_URL}/api/ingest" \
-  -F "text=The Federal Reserve sets monetary policy to control inflation and employment." \
-  -F "source=smoke-test" || echo "000"); _R="${_H:0:3}"
-_check "POST /api/ingest → 200 chunks>0" "$_R" "200" "$(cat /tmp/_st_body)" '"chunks"'
+# 4. POST /api/ingest — real Wikipedia article (Federal Reserve)
+printf '  Fetching Wikipedia: Federal_Reserve...\n'
+_WIKI_TEXT=$(curl -s --max-time 15 \
+  "https://en.wikipedia.org/w/api.php?action=query&titles=Federal_Reserve&prop=extracts&explaintext=true&format=json&origin=*" \
+  | python3 -c "
+import json, sys
+d = json.load(sys.stdin)
+pages = d.get('query', {}).get('pages', {})
+print(list(pages.values())[0].get('extract', ''))
+" 2>/dev/null)
+if [[ -z "$_WIKI_TEXT" ]]; then
+  printf '  \033[33m⚠\033[0m  Wikipedia fetch failed — skipping ingest/retrieve checks\n'
+  FAIL=$(( FAIL + 1 ))
+else
+  > /tmp/_st_body
+  _H=$(curl -s -o /tmp/_st_body -w '%{http_code}' --max-time 60 \
+    -X POST "${BACKEND_URL}/api/ingest" \
+    -F "text=${_WIKI_TEXT}" \
+    -F "source=wikipedia/Federal_Reserve" || echo "000"); _R="${_H:0:3}"
+  _CHUNKS=$(python3 -c "import json,sys; print(json.load(open('/tmp/_st_body')).get('chunks',0))" 2>/dev/null || echo 0)
+  if [[ "$_R" == "200" && "$_CHUNKS" -gt 1 ]]; then
+    printf '  \033[32m✓\033[0m POST /api/ingest → 200  (%s chunks)\n' "$_CHUNKS"
+    PASS=$(( PASS + 1 ))
+  else
+    printf '  \033[31m✗\033[0m POST /api/ingest → HTTP %s  chunks=%s\n' "$_R" "$_CHUNKS"
+    FAIL=$(( FAIL + 1 ))
+  fi
 
-# 5. POST /api/retrieve — query against ingested text
-> /tmp/_st_body
-_H=$(curl -s -o /tmp/_st_body -w '%{http_code}' --max-time 30 \
-  -X POST "${BACKEND_URL}/api/retrieve" \
-  -H "Content-Type: application/json" \
-  -d '{"query":"Federal Reserve inflation","k":3}' || echo "000"); _R="${_H:0:3}"
-_check "POST /api/retrieve → 200 chunks[]" "$_R" "200" "$(cat /tmp/_st_body)" '"chunks"'
+  # 5. POST /api/retrieve — query against ingested Wikipedia content
+  > /tmp/_st_body
+  _H=$(curl -s -o /tmp/_st_body -w '%{http_code}' --max-time 30 \
+    -X POST "${BACKEND_URL}/api/retrieve" \
+    -H "Content-Type: application/json" \
+    -d '{"query":"How does the Federal Reserve control inflation?","k":3}' || echo "000"); _R="${_H:0:3}"
+  _RET_COUNT=$(python3 -c "import json,sys; print(len(json.load(open('/tmp/_st_body')).get('chunks',[])))" 2>/dev/null || echo 0)
+  if [[ "$_R" == "200" && "$_RET_COUNT" -gt 0 ]]; then
+    printf '  \033[32m✓\033[0m POST /api/retrieve → 200  (%s results)\n' "$_RET_COUNT"
+    PASS=$(( PASS + 1 ))
+  else
+    printf '  \033[31m✗\033[0m POST /api/retrieve → HTTP %s  results=%s\n' "$_R" "$_RET_COUNT"
+    FAIL=$(( FAIL + 1 ))
+  fi
+fi
 
 rm -f /tmp/_st_body
 

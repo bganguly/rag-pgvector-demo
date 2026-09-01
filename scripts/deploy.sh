@@ -118,8 +118,20 @@ if [[ "$TARGET" == "frontend-only" ]]; then
     [[ -n "$_V" ]] && _vercel_set_env "$_K" "$_V"
   done
   printf '  Deploying frontend to Vercel...\n'
-  vercel --prod --yes
+  _VERCEL_OUT4=$(mktemp /tmp/vercel-out-XXXXXX)
+  vercel --prod --yes 2>&1 | tee "$_VERCEL_OUT4"
+  FRONTEND_URL4=$(grep -oE 'https://[a-zA-Z0-9._-]+\.vercel\.app' "$_VERCEL_OUT4" | tail -1)
+  rm -f "$_VERCEL_OUT4"
   printf '%s' "$_CURRENT_SHA" > "$_SHA_FILE"
+
+  printf '\nRun smoke test? [Y/n]: '
+  read -r _SMOKE4
+  if [[ "${_SMOKE4:-Y}" =~ ^[Yy] ]]; then
+    _BE4=$(_env_val "BACKEND_URL")
+    bash "$ROOT/scripts/smoke-test.sh" \
+      ${_BE4:+--backend-url "$_BE4"} \
+      ${FRONTEND_URL4:+--frontend-url "$FRONTEND_URL4"}
+  fi
   exit 0
 fi
 
