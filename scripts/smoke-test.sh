@@ -34,7 +34,7 @@ fi
 
 # Final fallback to known deployed values
 BACKEND_URL="${BACKEND_URL:-https://9y3yanp443.execute-api.us-east-1.amazonaws.com}"
-FRONTEND_URL="${FRONTEND_URL:-https://rag-pgvector-gangulybikramjit-4435s-projects.vercel.app}"
+FRONTEND_URL="${FRONTEND_URL:-https://rag-pgvector.vercel.app}"
 
 BACKEND_URL="${BACKEND_URL%/}"
 FRONTEND_URL="${FRONTEND_URL%/}"
