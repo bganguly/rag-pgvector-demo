@@ -11,3 +11,5 @@ __pycache__/
 infra/aws/.terraform/
 infra/aws/terraform.tfstate.d/
 .last-deployed-sha
+.vercel
+.env*
