@@ -5,7 +5,17 @@ OpenAI embeddings stored in **pgvector**, cosine-similarity retrieval, and token
 **Vercel AI SDK**. Provider toggle switches between Anthropic, OpenAI, and **NVIDIA NIM (Nemotron)** at
 runtime — same interface, configurable `base_url`.
 
-**[→ Portfolio demo](https://bganguly.github.io/#rag_pgvector)**&nbsp;&nbsp;&nbsp;&nbsp;**[Live demo →](https://frontend-sigma-ten-30.vercel.app)**&nbsp;&nbsp;*Lambda cold-start · ~2–5 s on first request* &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; **[Claude artifact: explain the RAG-pgvector flow →](https://claude.ai/code/artifact/68435554-f15d-437c-9cff-db62bf578b1e?via=auto_preview)**
+---
+
+## Live Service
+
+| Endpoint | URL |
+|---|---|
+| **App** | available on demand |
+| **API** | available on demand |
+| **Portfolio demo** | https://bganguly.github.io/#rag_pgvector |
+
+> Lambda scales to zero; cold starts are typically 2–5 s on first request.
 
 ---
 
