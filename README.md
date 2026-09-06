@@ -95,15 +95,6 @@ sequenceDiagram
 
 
 
-## Deployment / Running
-
-```bash
-./scripts/deploy.sh      # local [1], AWS Lambda + Neon + Vercel [2], or GCP Cloud Run [3]
-./scripts/infra-down.sh  # tear down local [1] or AWS [--aws] or GCP [--cloud]
-```
-
----
-
 ## Stack
 
 | Component | Implementation |
@@ -118,3 +109,12 @@ sequenceDiagram
 | **IaC** | Terraform (`infra/aws/`) — Lambda, ECR, CodeBuild, S3, IAM, CloudWatch |
 
 ---
+## Deployment / Running
+
+```bash
+./scripts/deploy.sh      # local [1], AWS Lambda + Neon + Vercel [2], or GCP Cloud Run [3]
+./scripts/infra-down.sh  # tear down local [1] or AWS [--aws] or GCP [--cloud]
+```
+
+---
+
