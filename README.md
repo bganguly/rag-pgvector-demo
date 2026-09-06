@@ -32,28 +32,6 @@ Load full Wikipedia articles by topic label, then ask questions against what you
 
 ---
 
-## Running
-
-```bash
-./scripts/deploy.sh      # local [1], AWS Lambda + Neon + Vercel [2], or GCP Cloud Run [3]
-./scripts/infra-down.sh  # tear down local [1] or AWS [--aws] or GCP [--cloud]
-```
-
----
-
-| Component | Implementation |
-|---|---|
-| **RAG pipeline** | LangChain `RecursiveCharacterTextSplitter` (800 chars / 150 overlap) → OpenAI `text-embedding-3-small` (1 536 dims) → pgvector cosine similarity |
-| **Vector store** | PostgreSQL 16 + pgvector extension; `langchain-postgres` `PGVector` handles schema, IVFFlat index, and async upsert |
-| **LLM streaming** | Next.js App Router API route calls FastAPI `/api/retrieve`, injects chunks as context, then streams via Vercel AI SDK `streamText`; tokens arrive at the browser via the AI SDK data-stream protocol |
-| **Provider toggle** | Anthropic `claude-haiku-4-5` (default) · OpenAI `gpt-4o-mini` · NVIDIA NIM `nvidia/llama-3.3-nemotron-super-49b-v1` — switched from the header without reloading |
-| **Ingest API** | `POST /api/ingest` accepts `.txt` / `.md` file upload or raw pasted text; chunked and embedded in one call |
-| **Backend** | FastAPI 0.115 + asyncio; `lifespan` hook initialises pgvector extension and LangChain collection on startup; served via **Mangum** on AWS Lambda |
-| **Frontend** | Next.js 15 App Router, React 19, TypeScript 5.7, Tailwind CSS; `useChat` from `ai/react`; deployed on **Vercel** |
-| **IaC** | Terraform (`infra/aws/`) — Lambda, ECR, CodeBuild, S3, IAM, CloudWatch |
-
----
-
 ## Architecture
 
 ### Ingest flow — step by step
@@ -116,3 +94,25 @@ sequenceDiagram
 | **Lambda cold start** | Mangum wraps FastAPI; `lifespan` hook runs `init_db()` on cold start; asyncpg pool uses `max_inactive_connection_lifetime=30` to handle Neon's auto-pause reconnection |
 
 
+
+## Running
+
+```bash
+./scripts/deploy.sh      # local [1], AWS Lambda + Neon + Vercel [2], or GCP Cloud Run [3]
+./scripts/infra-down.sh  # tear down local [1] or AWS [--aws] or GCP [--cloud]
+```
+
+---
+
+| Component | Implementation |
+|---|---|
+| **RAG pipeline** | LangChain `RecursiveCharacterTextSplitter` (800 chars / 150 overlap) → OpenAI `text-embedding-3-small` (1 536 dims) → pgvector cosine similarity |
+| **Vector store** | PostgreSQL 16 + pgvector extension; `langchain-postgres` `PGVector` handles schema, IVFFlat index, and async upsert |
+| **LLM streaming** | Next.js App Router API route calls FastAPI `/api/retrieve`, injects chunks as context, then streams via Vercel AI SDK `streamText`; tokens arrive at the browser via the AI SDK data-stream protocol |
+| **Provider toggle** | Anthropic `claude-haiku-4-5` (default) · OpenAI `gpt-4o-mini` · NVIDIA NIM `nvidia/llama-3.3-nemotron-super-49b-v1` — switched from the header without reloading |
+| **Ingest API** | `POST /api/ingest` accepts `.txt` / `.md` file upload or raw pasted text; chunked and embedded in one call |
+| **Backend** | FastAPI 0.115 + asyncio; `lifespan` hook initialises pgvector extension and LangChain collection on startup; served via **Mangum** on AWS Lambda |
+| **Frontend** | Next.js 15 App Router, React 19, TypeScript 5.7, Tailwind CSS; `useChat` from `ai/react`; deployed on **Vercel** |
+| **IaC** | Terraform (`infra/aws/`) — Lambda, ECR, CodeBuild, S3, IAM, CloudWatch |
+
+---
