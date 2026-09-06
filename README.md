@@ -95,7 +95,7 @@ sequenceDiagram
 
 
 
-## Running
+## Deployment / Running
 
 ```bash
 ./scripts/deploy.sh      # local [1], AWS Lambda + Neon + Vercel [2], or GCP Cloud Run [3]
@@ -103,6 +103,8 @@ sequenceDiagram
 ```
 
 ---
+
+## Stack
 
 | Component | Implementation |
 |---|---|
