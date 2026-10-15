@@ -12,10 +12,10 @@ runtime — same interface, configurable `base_url`.
 | Endpoint | URL |
 |---|---|
 | **App** | https://frontend-sigma-ten-30.vercel.app |
-| **API** | https://frontend-sigma-ten-30.vercel.app/api-explorer.html |
+| **API Explorer** | https://frontend-sigma-ten-30.vercel.app/api-explorer.html |
 | **Portfolio demo** | https://bganguly.github.io/#rag_pgvector |
 
-> Lambda scales to zero; cold starts are typically 2–5 s on first request.
+> Cloud Run scales to zero when idle; the first request after a period of inactivity may have a slight delay.
 
 ---
 
