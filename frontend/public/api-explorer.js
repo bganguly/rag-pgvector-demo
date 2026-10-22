@@ -1,3 +1,34 @@
+(function probeBackend() {
+  var SLOW_MS = 800, READY_MS = 1200;
+  var banner = document.getElementById('wake-banner');
+  var wakeStart = performance.now();
+  var wakeInterval = null;
+  var slowTimer = setTimeout(function() {
+    if (!banner) return;
+    banner.style.display = 'block';
+    banner.style.background = 'rgba(251,191,36,0.15)';
+    banner.style.borderBottom = '1px solid rgba(251,191,36,0.3)';
+    banner.style.color = '#fbbf24';
+    wakeInterval = setInterval(function() {
+      var s = Math.round((performance.now() - wakeStart) / 1000);
+      banner.textContent = '⏳ Backend waking up — ' + s + 's';
+    }, 100);
+  }, SLOW_MS);
+  function markReady() {
+    clearTimeout(slowTimer);
+    if (wakeInterval) { clearInterval(wakeInterval); wakeInterval = null; }
+    if (!banner || banner.style.display === 'none') return;
+    banner.style.background = 'rgba(34,197,94,0.12)';
+    banner.style.borderBottom = '1px solid rgba(34,197,94,0.25)';
+    banner.style.color = '#4ade80';
+    banner.textContent = '✓ Backend ready';
+    setTimeout(function() { banner.style.display = 'none'; }, READY_MS);
+  }
+  var baseEl = document.getElementById('base-url-input');
+  var base = (baseEl && baseEl.value.trim().replace(/\/$/, '')) || '';
+  fetch(base + '/health').then(markReady).catch(markReady);
+})();
+
 function getBase() {
   return document.getElementById('base-url-input').value.trim().replace(/\/$/, '');
 }
