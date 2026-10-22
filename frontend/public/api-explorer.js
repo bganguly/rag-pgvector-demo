@@ -11,7 +11,7 @@
     banner.style.color = '#fbbf24';
     wakeInterval = setInterval(function() {
       var s = Math.round((performance.now() - wakeStart) / 1000);
-      banner.textContent = '⏳ Backend waking up — ' + s + 's';
+      banner.textContent = '⏳ Probing /health — ' + s + 's';
     }, 100);
   }, SLOW_MS);
   function markReady() {
